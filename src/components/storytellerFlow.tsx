@@ -16,24 +16,12 @@ export default function StorytellerFlow() {
     const [generation, setGeneration] = useState({
         "consequence": 'Eres contratado por un museo,  te enfrentas a un escenario complejo: la desaparición de la curadora en medio de un evento de alta sociedad. Una nota de rescate en la oficina de Isabel. Mientras tanto, rumores sobre un subasta en el mercado negro comienzan a circular, y las cámaras de seguridad del museo parecen haber sido manipuladas. Los medios de comunicación presionan para obtener respuestas, y el museo teme por su reputación.', 
         "option 1": 'Investigar la escena del crimen',
-        "option 2": 'Revisar las camaras de seguridad',
-        "option 3": 'Entrevistas a los familiares de la trabajadora'
+        "option 2": 'Entrevistas a los familiares de la trabajadora',
+        "option 3": 'Abandonar caso'
     });
     // const { messages, input, append, reload } = useChat({ api: 'api/chat' });
-    const [optionSelected, setOptionSelected] = useState("")
     const [messages, setMessages] = useState<CoreMessage[]>([])
 
-    const [options, setOptions] = useState([
-        {
-            text: "Investigar la escena del crimen",
-        },
-        {
-            text: "Revisar las camaras de seguridad",
-        },
-        {
-            text: "Entrevistas a los familiares de la trabajadora",
-        }
-    ])
 
     const selectOption = async (text: string) => {
         console.log("opcion seleccionada: " + text)
@@ -56,8 +44,7 @@ export default function StorytellerFlow() {
             }
         }
         console.log(generation)
-        setOptionSelected(text)
-        console.log(currentMessages)
+        //console.log(currentMessages)
         setMessages(currentMessages)
     }
 
