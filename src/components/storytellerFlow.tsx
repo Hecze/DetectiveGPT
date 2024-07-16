@@ -6,6 +6,9 @@ import Option from "./option";
 
 export default function StorytellerFlow() {
 
+    const [optionSelected, setOptionSelected] = useState("")
+
+
     const [options, setOptions] = useState([
         {
             text: "Investigar la escena del crimen",
@@ -17,6 +20,12 @@ export default function StorytellerFlow() {
             text: "Entrevistas a los familiares de la trabajadora",
         }
     ])
+
+    const selectOption = (index: number) => {
+        console.log("opcion seleccionada: " + options[index].text)
+        setOptionSelected(options[index].text)
+    }
+
 
     return (
         <div className="text-wrap text-gray-300 px-12">
@@ -33,7 +42,7 @@ export default function StorytellerFlow() {
             />
             <div className="flex flex-col gap-4 mt-12">
             {options.map((option, index) => (
-                <Option key={index} text={option.text}/>
+                <Option key={index} text={option.text} onClick={() => selectOption(index)}/>
             ))}
             </div>
         </div>
