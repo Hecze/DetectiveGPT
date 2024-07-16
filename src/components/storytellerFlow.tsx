@@ -5,7 +5,8 @@ import { useState } from "react";
 import Option from "./option";
 import { generate } from '@/app/actions';
 import { readStreamableValue } from 'ai/rsc';
-import { Message, useChat } from 'ai/react';
+// import { Message, useChat } from 'ai/react';
+import { CoreAssistantMessage, CoreMessage, CoreSystemMessage, CoreUserMessage } from "ai";
 
 // Force the page to be dynamic and allow streaming responses up to 30 seconds
 export const dynamic = 'force-dynamic';
@@ -18,9 +19,9 @@ export default function StorytellerFlow() {
         "option 2": 'Revisar las camaras de seguridad',
         "option 3": 'Entrevistas a los familiares de la trabajadora'
     });
-    const { messages, input, append, reload } = useChat({ api: 'api/chat' });
+    // const { messages, input, append, reload } = useChat({ api: 'api/chat' });
     const [optionSelected, setOptionSelected] = useState("")
-
+    const [messages, setMessages] = useState<CoreMessage[]>([])
 
     const [options, setOptions] = useState([
         {
@@ -37,7 +38,16 @@ export default function StorytellerFlow() {
     const selectOption = async (text: string) => {
         console.log("opcion seleccionada: " + text)
         // await append({ content: options[index].text, role: 'user' })
-        const { object } = await generate(text);
+        let assistantMessage: CoreAssistantMessage = {
+            role: 'assistant',
+            content: generation.result
+        }
+        let userMessage: CoreUserMessage = {
+            role: 'user',
+            content: text
+        }
+        let currentMessages = [...messages, assistantMessage, userMessage]
+        const { object } = await generate(currentMessages);
         for await (const partialObject of readStreamableValue(object)) {
             if (partialObject) {
                 setGeneration(
@@ -47,19 +57,20 @@ export default function StorytellerFlow() {
         }
         console.log(generation)
         setOptionSelected(text)
-        console.log(messages)
+        console.log(currentMessages)
+        setMessages(currentMessages)
     }
 
 
     return (
         <div className="text-wrap text-gray-300 px-12">
             <p>{generation && generation.result}</p>
-            {messages.map(m => (
+            {/* {messages.map(m => (
                 <div key={m.id} className="whitespace-pre-wrap">
                     {m.role === 'user' ? 'Investigador: ' : 'Narrador: '}
                     {m.content}
                 </div>
-            ))}
+            ))} */}
             <Image
                 src="/separador.webp"
                 alt="separador"
