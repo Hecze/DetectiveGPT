@@ -63,7 +63,8 @@ export default function StorytellerFlow() {
 
 
     return (
-        <div className="text-wrap text-gray-300 px-12">
+        <div className="xl:w-2/4  w-screen min-h-screen md:bg-contain bg-center bg-no-repeat" style={{ backgroundImage: "url('/fondoPrincipal.webp')" }}>
+            <div className="h-full flex flex-col justify-center text-gray-300 px-4 sm:px-24 max-w-[50rem] mx-auto">
             <p>{generation && generation.result}</p>
             {/* {messages.map(m => (
                 <div key={m.id} className="whitespace-pre-wrap">
@@ -88,5 +89,7 @@ export default function StorytellerFlow() {
                     {generation && <Option text={generation["option 3"]} onClick={() => selectOption(generation["option 3"])} />}
             </div>
         </div>
+        </div>
+
     );
 }

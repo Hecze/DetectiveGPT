@@ -12,14 +12,8 @@ export default function Home() {
         className="max-w-1/4 max-h-screen hidden xl:block"
         priority
       />
-      <Image
-        src="/fondoPrincipal.webp"
-        alt="fondoSecundarioIzquierdo"
-        width={1000}
-        height={1000}
-        className="xl:max-w-2/4 max-h-screen"
-        priority
-      />
+            <StorytellerFlow />
+
       <Image
         src="/fondoSecundarioDerecho.webp"
         alt="fondoSecundarioIzquierdo"
@@ -29,9 +23,6 @@ export default function Home() {
         priority
       />
 
-      <div className="absolute max-w-screen xl:max-w-[900px] bottom-0 xl:h-[50vh] pb-12">
-            <StorytellerFlow />
-      </div>
     </main>
   );
 }
