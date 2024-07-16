@@ -4,8 +4,10 @@ import Image from "next/image";
 import { useState } from "react";
 import Option from "./option";
 
-export default function StorytellerFlow() {
+import { Message, useChat } from 'ai/react';
 
+export default function StorytellerFlow() {
+    const { messages, input, append, reload } = useChat({ api: 'api/chat' });
     const [optionSelected, setOptionSelected] = useState("")
 
 
@@ -21,16 +23,23 @@ export default function StorytellerFlow() {
         }
     ])
 
-    const selectOption = (index: number) => {
+    const selectOption = async (index: number) => {
         console.log("opcion seleccionada: " + options[index].text)
+        await append({content: options[index].text, role: 'user' })
+        await reload()
         setOptionSelected(options[index].text)
+        console.log(messages)
     }
 
 
     return (
         <div className="text-wrap text-gray-300 px-12">
+            {input}
             <p>
-                Eres contratado por un museo,  te enfrentas a un escenario complejo: la desaparición de la curadora en medio de un evento de alta sociedad. Una nota de rescate en la oficina de Isabel. Mientras tanto, rumores sobre un subasta en el mercado negro comienzan a circular, y las cámaras de seguridad del museo parecen haber sido manipuladas. Los medios de comunicación presionan para obtener respuestas, y el museo teme por su reputación.
+                {messages[0] && messages[0].content}
+            </p>
+            <p>
+                Eres contratado por un museo, te enfrentas a un escenario complejo: la desaparición de la curadora en medio de un evento de alta sociedad. Una nota de rescate en la oficina de Isabel. Mientras tanto, rumores sobre un subasta en el mercado negro comienzan a circular, y las cámaras de seguridad del museo parecen haber sido manipuladas. Los medios de comunicación presionan para obtener respuestas, y el museo teme por su reputación.
             </p>
             <Image
                 src="/separador.webp"
@@ -41,9 +50,9 @@ export default function StorytellerFlow() {
                 priority
             />
             <div className="flex flex-col gap-4 mt-12">
-            {options.map((option, index) => (
-                <Option key={index} text={option.text} onClick={() => selectOption(index)}/>
-            ))}
+                {options.map((option, index) => (
+                    <Option key={index} text={option.text} onClick={() => selectOption(index)} />
+                ))}
             </div>
         </div>
 
