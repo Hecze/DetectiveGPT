@@ -29,7 +29,7 @@ export default function Home() {
         priority
       />
 
-      <div className="absolute max-w-[900px] bottom-0 h-[50vh]">
+      <div className="absolute max-w-screen xl:max-w-[900px] bottom-0 xl:h-[50vh] pb-12">
             <StorytellerFlow />
       </div>
     </main>
