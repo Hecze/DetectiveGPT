@@ -32,8 +32,8 @@ export default function StorytellerFlow() {
                 priority
             />
             <div className="flex flex-col gap-4 mt-12">
-            {options.map((option) => (
-                <Option text={option.text} />
+            {options.map((option, index) => (
+                <Option key={index} text={option.text}/>
             ))}
             </div>
         </div>
