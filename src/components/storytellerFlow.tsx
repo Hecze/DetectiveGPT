@@ -36,26 +36,29 @@ export default function StorytellerFlow() {
     const selectOption = async (text: string) => {
         console.log("opcion seleccionada: " + text)
         // await append({ content: options[index].text, role: 'user' })
-        let assistantMessage: CoreAssistantMessage = {
-            role: 'assistant',
-            content: generation.consequence
-        }
-        let userMessage: CoreUserMessage = {
-            role: 'user',
-            content: text
-        }
-        let currentMessages = [...messages, assistantMessage, userMessage]
-        const { object } = await generate(currentMessages);
-        for await (const partialObject of readStreamableValue(object)) {
-            if (partialObject) {
-                setGeneration(
-                    partialObject.notification
-                );
+        if(text != ""){
+            let assistantMessage: CoreAssistantMessage = {
+                role: 'assistant',
+                content: generation.consequence
             }
+            let userMessage: CoreUserMessage = {
+                role: 'user',
+                content: text
+            }
+            let currentMessages = [...messages, assistantMessage, userMessage]
+            const { object } = await generate(currentMessages);
+            for await (const partialObject of readStreamableValue(object)) {
+                if (partialObject) {
+                    setGeneration(
+                        partialObject.notification
+                    );
+                }
+            }
+            // console.log(generation)
+            //console.log(currentMessages)
+            setMessages(currentMessages)
         }
-        // console.log(generation)
-        //console.log(currentMessages)
-        setMessages(currentMessages)
+
     }
 
 
@@ -83,8 +86,8 @@ export default function StorytellerFlow() {
                     {/* <Option key={index} text={option.text} onClick={() => selectOption(index)} /> */}
                 {/* ))} */}
                     {generation && <Option text={generation["option 1"]} onClick={() => selectOption(generation["option 1"])} />}
-                    {generation && <Option text={generation["option 2"]} onClick={() => selectOption(generation["option 2"])} />}
-                    {generation && <Option text={generation["option 3"]} onClick={() => selectOption(generation["option 3"])} />}
+                    {generation && generation["option 2"] !== "" && <Option text={generation["option 2"]} onClick={() => selectOption(generation["option 2"])} />}
+                    {generation && generation["option 3"] !== "" && <Option text={generation["option 3"]} onClick={() => selectOption(generation["option 3"])} />}
             </div>
         </div>
         </div>

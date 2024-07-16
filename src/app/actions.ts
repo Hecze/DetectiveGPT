@@ -32,19 +32,19 @@ export async function generate(messages: CoreMessage[]) {
       15. Advertir ante una situacion peligrosa y poder evitarla en las opciones.
       
       Reglas:
-      1. Si te matan el juego termina
-      2. Si resuelves la investigacion el juego termina.
-      3. Cuando el juego termine devuelve las opciones como strings vacias`,
+      1. El juego solo termina en 2 escenarios: el investigador muere o El investigador resuelve la investigación.
+      2. Cuando el juego termine devuelve las opciones como strings vacias
+      3. Tienes un tiempo limitado para tomar las decisiones.
+      4. Si el investigador no responde,la trama se desenvuelve`,
 
-      mode: 'json',
       messages: messages,
       maxTokens: 200,
       schema: z.object({
         notification: z.object({
-          "consequence": z.string().describe('Consecuencia tras la acción anterior. Máximo 400 caracteres'),
-          "option 1": z.string().describe('Primera opción a seguir. Vacio si finalizó el juego. Máximo 50 caracteres'),
-          "option 2": z.string().describe('Segunda opción a seguir. Vacio si finalizó el juego. Máximo 50 caracteres'),
-          "option 3": z.string().describe('Tercera opción a seguir. Vacio si finalizó el juego. Máximo 50 caracteres'),
+          "consequence": z.string().describe('Consecuencia tras la acción anterior.. Máximo 400 caracteres'),
+          "option 1": z.string().describe('Primera opción posible. Simplemente "..." si no hay opciones realizables. Máximo 50 caracteres'),
+          "option 2": z.string().describe('Segunda opción posible. Máximo 50 caracteres'),
+          "option 3": z.string().describe('Tercera opción posible. Máximo 50 caracteres'),
         }),
       }),
     });
