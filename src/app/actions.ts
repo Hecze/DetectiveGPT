@@ -29,7 +29,12 @@ export async function generate(messages: CoreMessage[]) {
       12. La policia trata despéctivamente al investigador a menos que tenga pruebas contundentes.
       13. La opciones deben ser realizables en la situacion actual.
       14. Hay momentos en donde las opciones disponibles no te permitan hacer nada, por ejemplo si estas secuestrado o amarrado.
-      15. Advertir ante una situacion peligrosa y poder evitarla en las opciones.`,
+      15. Advertir ante una situacion peligrosa y poder evitarla en las opciones.
+      
+      Reglas:
+      1. Si te matan el juego termina
+      2. Si resuelves la investigacion el juego termina.
+      3. Cuando el juego termine devuelve las opciones como strings vacias`,
 
       mode: 'json',
       messages: messages,
@@ -37,9 +42,9 @@ export async function generate(messages: CoreMessage[]) {
       schema: z.object({
         notification: z.object({
           "consequence": z.string().describe('Consecuencia tras la acción anterior. Máximo 400 caracteres'),
-          "option 1": z.string().describe('Primera opción a seguir. No mencionar por primera vez personajes aquí. Máximo 50 caracteres'),
-          "option 2": z.string().describe('Segunda opción a seguir. No mencionar por primera vez personajes aquí. Máximo 50 caracteres'),
-          "option 3": z.string().describe('Tercera opción a seguir. No mencionar por primera vez personajes aquí. Máximo 50 caracteres'),
+          "option 1": z.string().describe('Primera opción a seguir. Vacio si finalizó el juego. Máximo 50 caracteres'),
+          "option 2": z.string().describe('Segunda opción a seguir. Vacio si finalizó el juego. Máximo 50 caracteres'),
+          "option 3": z.string().describe('Tercera opción a seguir. Vacio si finalizó el juego. Máximo 50 caracteres'),
         }),
       }),
     });

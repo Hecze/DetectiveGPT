@@ -1,7 +1,7 @@
 
 "use client"
 import Image from "next/image";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Option from "./option";
 import { generate } from '@/app/actions';
 import { readStreamableValue } from 'ai/rsc';
@@ -21,7 +21,17 @@ export default function StorytellerFlow() {
     });
     // const { messages, input, append, reload } = useChat({ api: 'api/chat' });
     const [messages, setMessages] = useState<CoreMessage[]>([])
+    const [gameOver, setGameOver] = useState(false)
 
+
+    //cada que se actualize generation se revisa las opciones, si son strings vacios entonces se acaba el juego
+    useEffect(() => {
+        if (generation && generation["option 1"] === "" && generation["option 2"] === "" && generation["option 3"] === "") {
+            setGameOver(true);
+        }
+        console.log(generation);
+    }, [generation]);
+    
 
     const selectOption = async (text: string) => {
         console.log("opcion seleccionada: " + text)
@@ -43,7 +53,7 @@ export default function StorytellerFlow() {
                 );
             }
         }
-        console.log(generation)
+        // console.log(generation)
         //console.log(currentMessages)
         setMessages(currentMessages)
     }
@@ -52,6 +62,7 @@ export default function StorytellerFlow() {
     return (
         <div className="xl:w-2/4  w-screen min-h-screen md:bg-contain bg-center bg-no-repeat" style={{ backgroundImage: "url('/fondoPrincipal.webp')" }}>
             <div className="h-full flex flex-col justify-center text-gray-300 px-4 sm:px-24 max-w-[50rem] mx-auto">
+                <h1 className="text-2xl font-bold mb-12">{gameOver ? 'Fin del juego' : 'Criminologia Procedural'}</h1>
             <p>{generation && generation.consequence}</p>
             {/* {messages.map(m => (
                 <div key={m.id} className="whitespace-pre-wrap">
