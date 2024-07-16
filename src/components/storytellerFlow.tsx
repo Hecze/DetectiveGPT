@@ -25,8 +25,7 @@ export default function StorytellerFlow() {
 
     const selectOption = async (index: number) => {
         console.log("opcion seleccionada: " + options[index].text)
-        await append({content: options[index].text, role: 'user' })
-        await reload()
+        await append({ content: options[index].text, role: 'user' })
         setOptionSelected(options[index].text)
         console.log(messages)
     }
@@ -34,13 +33,12 @@ export default function StorytellerFlow() {
 
     return (
         <div className="text-wrap text-gray-300 px-12">
-            {input}
-            <p>
-                {messages[0] && messages[0].content}
-            </p>
-            <p>
-                Eres contratado por un museo, te enfrentas a un escenario complejo: la desaparición de la curadora en medio de un evento de alta sociedad. Una nota de rescate en la oficina de Isabel. Mientras tanto, rumores sobre un subasta en el mercado negro comienzan a circular, y las cámaras de seguridad del museo parecen haber sido manipuladas. Los medios de comunicación presionan para obtener respuestas, y el museo teme por su reputación.
-            </p>
+            {messages.map(m => (
+                <div key={m.id} className="whitespace-pre-wrap">
+                    {m.role === 'user' ? 'Investigador: ' : 'Narrador: '}
+                    {m.content}
+                </div>
+            ))}
             <Image
                 src="/separador.webp"
                 alt="separador"
