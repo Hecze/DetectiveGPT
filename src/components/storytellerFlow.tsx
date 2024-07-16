@@ -14,7 +14,7 @@ export const maxDuration = 30;
 
 export default function StorytellerFlow() {
     const [generation, setGeneration] = useState({
-        "result": 'Eres contratado por un museo,  te enfrentas a un escenario complejo: la desaparición de la curadora en medio de un evento de alta sociedad. Una nota de rescate en la oficina de Isabel. Mientras tanto, rumores sobre un subasta en el mercado negro comienzan a circular, y las cámaras de seguridad del museo parecen haber sido manipuladas. Los medios de comunicación presionan para obtener respuestas, y el museo teme por su reputación.', 
+        "consequence": 'Eres contratado por un museo,  te enfrentas a un escenario complejo: la desaparición de la curadora en medio de un evento de alta sociedad. Una nota de rescate en la oficina de Isabel. Mientras tanto, rumores sobre un subasta en el mercado negro comienzan a circular, y las cámaras de seguridad del museo parecen haber sido manipuladas. Los medios de comunicación presionan para obtener respuestas, y el museo teme por su reputación.', 
         "option 1": 'Investigar la escena del crimen',
         "option 2": 'Revisar las camaras de seguridad',
         "option 3": 'Entrevistas a los familiares de la trabajadora'
@@ -40,7 +40,7 @@ export default function StorytellerFlow() {
         // await append({ content: options[index].text, role: 'user' })
         let assistantMessage: CoreAssistantMessage = {
             role: 'assistant',
-            content: generation.result
+            content: generation.consequence
         }
         let userMessage: CoreUserMessage = {
             role: 'user',
@@ -65,7 +65,7 @@ export default function StorytellerFlow() {
     return (
         <div className="xl:w-2/4  w-screen min-h-screen md:bg-contain bg-center bg-no-repeat" style={{ backgroundImage: "url('/fondoPrincipal.webp')" }}>
             <div className="h-full flex flex-col justify-center text-gray-300 px-4 sm:px-24 max-w-[50rem] mx-auto">
-            <p>{generation && generation.result}</p>
+            <p>{generation && generation.consequence}</p>
             {/* {messages.map(m => (
                 <div key={m.id} className="whitespace-pre-wrap">
                     {m.role === 'user' ? 'Investigador: ' : 'Narrador: '}
