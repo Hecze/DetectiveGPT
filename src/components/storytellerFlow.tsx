@@ -131,8 +131,8 @@ export default function StorytellerFlow() {
                 <source src="soundtrack.mp3" type="audio/mp3" />
                 Your browser does not support the audio element.
             </audio>
-            <div className="h-full flex flex-col justify-center text-gray-300 px-4 sm:px-24 max-w-[50rem] mx-auto">
-                <h1 className="text-2xl font-bold mb-12">{gameOver ? 'Fin del juego' : 'Criminologia Procedural'}</h1>
+            <div className="h-full flex flex-col justify-center text-gray-300 px-4 sm:px-36 max-w-[50rem] mx-auto">
+                <h1 className="hidden 2xl:block text-2xl font-bold mb-12">{gameOver ? 'Fin del juego' : 'Criminologia Procedural'}</h1>
                 <p>{generation && generation.consequence}</p>
                 <select onChange={handleVoiceChange} value={selectedVoice} className="hidden">
                     {voices.map(voice => (
