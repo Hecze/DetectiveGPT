@@ -1,19 +1,69 @@
 import { openai } from '@ai-sdk/openai';
-import { streamText } from 'ai';
+import { generateText, generateObject } from 'ai';
+import { z } from 'zod';
+import { NextResponse } from 'next/server';
 
 // Allow streaming responses up to 30 seconds
-export const maxDuration = 30;
+export const maxDuration = 60;
 
 export async function POST(req: Request) {
-  const { messages } = await req.json();
+  try {
+    const { messages } = await req.json();
+    console.log('messages: ', messages);
 
-  const result = await streamText({
-    // model: openai('gpt-4-turbo'), // $5.00 x millon de requests
-    model: openai('gpt-3.5-turbo'), // $0.50 x millon de requests
-    system: 'Juguemos a la criminología. Yo soy el jugador y tu el narrador. Crimen y Circunstancias: El crimen lo cometió un grupo de contrabandistas de arte que buscaban apoderarse de un valioso artefacto antiguo, una estatua de jade que se encontraba en el Museo de Historia Natural de la ciudad. El líder del grupo, conocido como "El Zorro", planeó un elaborado robo durante una gala benéfica. Sin embargo, durante el robo, algo salió mal. La curadora del museo, Dr. Isabel Vargas, los descubrió y en el forcejeo cayó de una escalera, golpeándose la cabeza y muriendo en el acto. Para cubrir sus huellas, "El Zorro" decidió enterrar el cuerpo y simular un secuestro, dejando una nota de rescate para desviar la atención hacia un rival delictivo, "El Cuervo", un antiguo socio con quien tenía cuentas pendientes. Situación Inicial para el Investigador: El investigador, contratado por el museo,  se enfrenta a un escenario complejo: la desaparición de la curadora en medio de un evento de alta sociedad. La escena está plagada de inconsistencias: una nota de rescate en la oficina de Isabel, pero ninguna evidencia clara de secuestro. Mientras tanto, rumores sobre un subasta en el mercado negro comienzan a circular, y las cámaras de seguridad del museo parecen haber sido manipuladas. Los medios de comunicación presionan para obtener respuestas, y el museo teme por su reputación por lo que tiende a apurar al investigador o despedirlo si se demora mucho. Tus respuestas deben ser menores a 400 caracteres.',
-    messages,
-    maxTokens: 100,
+    const result = await generateText({
+      // model: openai('gpt-4-turbo'), // $5.00 x millon de requests
+      model: openai('gpt-3.5-turbo'), // $0.50 x millon de requests
+      system: `Eres un narrador de crímenes interactivo con un investigador. Devuelve la continuacion de la narrativa y 3 opciones cortas posibles. Maximo 500 caracteres.
+      Instrucciones:
+      1. No asumas conocimiento previo del investigador.
+      2. Introduce nuevos personajes con una descripción clara y breve cuando aparezcan por primera vez.
+      3. Los criminales son inteligentes, manipuladores y evasivos.
+      4. No utilizes juicios de valor.
+      5. Los criminales son peligrosos y pueden matar si se ven acorralados, no dejaran testigos vivos.
+      6. La narrativa debe ser de crimen, miedo, intriga y realismo.
+      7. El investigador está en desventaja, no sabe usar armas, y debe usar estrategia para ganar.
+      8. La narrativa puede ser terrorífica en momentos peligrosos; el investigador puede sentir miedo y es vulnerable.
+      9. Casi no hay registros de los criminales; solo se conocen rumores.
+      10. La trama es para adultos: crimen, miedo, intriga y realista.
+      12. La policia trata despéctivamente al investigador a menos que tenga pruebas contundentes.
+      13. La opciones deben ser realizables en la situacion actual.
+      14. Hay momentos en donde las opciones disponibles no te permitan hacer nada, por ejemplo si estas secuestrado o amarrado.
+      15. Advertir ante una situacion peligrosa y poder evitarla en las opciones.
+      `,
+      messages,
+      //maxTokens: 400,
+    });
+
+    const resultTextFormated = await textToJson(result.text);
+    const resultFormated = {...result , text:resultTextFormated.notification}
+    console.log(resultFormated.text);
+
+    // Retornar una respuesta JSON válida
+    return NextResponse.json(resultFormated, { status: 200 });
+  } catch (error) {
+    console.error(error);
+    return NextResponse.json({ error: 'Error procesando la solicitud' }, { status: 500 });
+  }
+}
+
+async function textToJson(text: string) {
+  'use server';
+
+  const { object } = await generateObject({
+    model: openai('gpt-3.5-turbo'),
+    system: `Transformas texto a formato JSON.`,
+    prompt: text,
+    maxTokens: 200,
+    schema: z.object({
+      notification: z.object({
+        "consequence": z.string().describe('Narrativa principal'),
+        "option_one": z.string().describe('Primera opción posible.'),
+        "option_two": z.string().describe('Segunda opción posible.'),
+        "option_three": z.string().describe('Tercera opción posible.'),
+      }),
+    }),
   });
 
-  return result.toAIStreamResponse();
+  return object;
 }

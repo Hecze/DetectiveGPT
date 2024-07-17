@@ -7,56 +7,54 @@ import { generate } from '@/app/actions';
 import { readStreamableValue } from 'ai/rsc';
 // import { Message, useChat } from 'ai/react';
 import { CoreAssistantMessage, CoreMessage, CoreSystemMessage, CoreUserMessage } from "ai";
+import { useChat } from "ai/react";
 
 // Force the page to be dynamic and allow streaming responses up to 30 seconds
 export const dynamic = 'force-dynamic';
 export const maxDuration = 30;
 
 export default function StorytellerFlow() {
+    const [messages, setMessages] = useState<CoreMessage[]>([]);
+    const [gameOver, setGameOver] = useState(false);
     const [generation, setGeneration] = useState({
         "consequence": 'Eres contratado por un museo,  te enfrentas a un escenario complejo: la desaparición de la curadora en medio de un evento de alta sociedad. Una nota de rescate en la oficina de Isabel. Mientras tanto, rumores sobre un subasta en el mercado negro comienzan a circular, y las cámaras de seguridad del museo parecen haber sido manipuladas. Los medios de comunicación presionan para obtener respuestas, y el museo teme por su reputación.', 
         "option 1": 'Investigar la escena del crimen',
         "option 2": 'Entrevistas a los familiares de la trabajadora',
         "option 3": 'Abandonar caso'
     });
-    // const { messages, input, append, reload } = useChat({ api: 'api/chat' });
-    const [messages, setMessages] = useState<CoreMessage[]>([])
-    const [gameOver, setGameOver] = useState(false)
 
-
-    //cada que se actualize generation se revisa las opciones, si son strings vacios entonces se acaba el juego
-    useEffect(() => {
-        if (generation && generation["option 1"] === "" && generation["option 2"] === "" && generation["option 3"] === "") {
-            setGameOver(true);
-        }
-        console.log(generation);
-    }, [generation]);
-    
 
     const selectOption = async (text: string) => {
         console.log("opcion seleccionada: " + text)
         // await append({ content: options[index].text, role: 'user' })
         if(text != ""){
-            let assistantMessage: CoreAssistantMessage = {
-                role: 'assistant',
-                content: generation.consequence
+
+            try{
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        messages: [...messages, { role: 'user',  content: text }],
+                    }),
+                })
+    
+                const data = await response.json()
+                //Es importante que content sea un string, sino da error
+                setMessages([...messages,{ role: 'assistant', content: JSON.stringify(data.text) }])
+                console.log(data.text)
+                setGeneration({
+                    "consequence": data.text.consequence,
+                    "option 1": data.text.option_one,
+                    "option 2": data.text.option_two,
+                    "option 3": data.text.option_three,
+                });
             }
-            let userMessage: CoreUserMessage = {
-                role: 'user',
-                content: text
+            catch(e){
+                console.log(e)
             }
-            let currentMessages = [...messages, assistantMessage, userMessage]
-            const { object } = await generate(currentMessages);
-            for await (const partialObject of readStreamableValue(object)) {
-                if (partialObject) {
-                    setGeneration(
-                        partialObject.notification
-                    );
-                }
-            }
-            // console.log(generation)
-            //console.log(currentMessages)
-            setMessages(currentMessages)
+
         }
 
     }
