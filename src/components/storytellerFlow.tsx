@@ -3,14 +3,19 @@ import Speech from "speak-tts";
 import Image from "next/image";
 import { useState, useEffect, useRef } from "react";
 import Option from "./option";
-import { generate } from '@/app/actions';
-import { readStreamableValue } from 'ai/rsc';
 import { CoreAssistantMessage, CoreMessage, CoreSystemMessage, CoreUserMessage } from "ai";
-import { useChat } from "ai/react";
 
 // Force the page to be dynamic and allow streaming responses up to 30 seconds
 export const dynamic = 'force-dynamic';
 export const maxDuration = 30;
+
+type Voice = {
+  name: string;
+  lang: string;
+  default?: boolean;
+  localService?: boolean;
+  voiceURI?: string;
+};
 
 export default function StorytellerFlow() {
     const audioRef = useRef<HTMLAudioElement>(null);
@@ -24,9 +29,9 @@ export default function StorytellerFlow() {
         "option 2": 'Entrevistas a los familiares de la trabajadora',
         "option 3": 'Terminar juego'
     });
-    const [speech, setSpeech] = useState(null);
-    const [voices, setVoices] = useState([]);
-    const [selectedVoice, setSelectedVoice] = useState('');
+    const [speech, setSpeech] = useState<Speech | null>(null);
+    const [voices, setVoices] = useState<Voice[]>([]);
+    const [selectedVoice, setSelectedVoice] = useState<string>('');
 
     useEffect(() => {
         const speechInstance = new Speech();
@@ -36,10 +41,17 @@ export default function StorytellerFlow() {
             rate: 1,
             pitch: 1,
             listeners: {
-                onvoiceschanged: voices => {
+                onvoiceschanged: (voices: any) => {
                     console.log("Voices changed", voices);
-                    setVoices(voices);
-                    const defaultVoice = voices.find(voice => voice.name === "Microsoft Sabina - Spanish (Mexico)");
+                    const formattedVoices: Voice[] = voices.map((voice: SpeechSynthesisVoice) => ({
+                        name: voice.name,
+                        lang: voice.lang,
+                        default: voice.default,
+                        localService: voice.localService,
+                        voiceURI: voice.voiceURI
+                    }));
+                    setVoices(formattedVoices);
+                    const defaultVoice = formattedVoices.find(voice => voice.name === "Microsoft Sabina - Spanish (Mexico)");
                     if (defaultVoice) {
                         setSelectedVoice(defaultVoice.name);
                         speechInstance.setVoice(defaultVoice.name);
@@ -67,7 +79,7 @@ export default function StorytellerFlow() {
         }
     }, [generation, speech]);
 
-    const handleVoiceChange = (e) => {
+    const handleVoiceChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
         const voiceName = e.target.value;
         setSelectedVoice(voiceName);
         if (speech) {
@@ -78,7 +90,7 @@ export default function StorytellerFlow() {
     const selectOption = async (text: string) => {
         if (audioRef && audioRef.current) {
             audioRef.current.play();
-            audioRef.current.volume = 0.2
+            audioRef.current.volume = 0.04
         }
         setIsAudioPlaying(true)
         setIsLoading(true)
@@ -95,25 +107,22 @@ export default function StorytellerFlow() {
                     body: JSON.stringify({
                         messages: [...messages, { role: 'user', content: text }],
                     }),
-                })
-    
-                const data = await response.json()
-                //Es importante que content sea un string, sino da error
-                setMessages([...messages,{ role: 'assistant', content: JSON.stringify(data.text) }])
-                console.log(data.text)
+                });
+
+                const data = await response.json();
+                setMessages([...messages, { role: 'assistant', content: JSON.stringify(data.text) }]);
+                console.log(data.text);
                 setGeneration({
                     "consequence": data.text.consequence,
                     "option 1": data.text.option_one,
                     "option 2": data.text.option_two,
                     "option 3": data.text.option_three,
                 });
-            }
-            catch(e){
-                console.log(e)
+            } catch (e) {
+                console.log(e);
             }
         }
-
-        setIsLoading(false)
+        setIsLoading(false);
     };
 
     return (
@@ -124,27 +133,28 @@ export default function StorytellerFlow() {
             </audio>
             <div className="h-full flex flex-col justify-center text-gray-300 px-4 sm:px-24 max-w-[50rem] mx-auto">
                 <h1 className="text-2xl font-bold mb-12">{gameOver ? 'Fin del juego' : 'Criminologia Procedural'}</h1>
-            <p>{generation && generation.consequence}</p>
-            {/* {messages.map(m => (
-                <div key={m.id} className="whitespace-pre-wrap">
-                    {m.role === 'user' ? 'Investigador: ' : 'Narrador: '}
-                    {m.content}
-                </div>
-            ))} */}
-            <Image
-                src="/separador.webp"
-                alt="separador"
-                width={850}
-                height={50}
-                className="xl:max-w-2/4"
-                priority
-            />
+                <p>{generation && generation.consequence}</p>
+                <select onChange={handleVoiceChange} value={selectedVoice} className="hidden">
+                    {voices.map(voice => (
+                        <option key={voice.name} value={voice.name}>
+                            {voice.name} ({voice.lang})
+                        </option>
+                    ))}
+                </select>
+                <Image
+                    src="/separador.webp"
+                    alt="separador"
+                    width={850}
+                    height={50}
+                    className="xl:max-w-2/4"
+                    priority
+                />
                 <div className="flex flex-col gap-4 mt-12">
                     {generation && <Option isLoading={isLoading} text={generation["option 1"]} onClick={() => selectOption(generation["option 1"])} />}
                     {generation && generation["option 2"] !== "" && <Option isLoading={isLoading} text={generation["option 2"]} onClick={() => selectOption(generation["option 2"])} />}
                     {generation && generation["option 3"] !== "" && <Option isLoading={isLoading} text={generation["option 3"]} onClick={() => selectOption(generation["option 3"])} />}
                 </div>
-        </div>
+            </div>
         </div>
     );
 }
