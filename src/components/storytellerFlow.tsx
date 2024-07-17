@@ -1,7 +1,7 @@
 "use client"
 import Speech from "speak-tts";
 import Image from "next/image";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Option from "./option";
 import { generate } from '@/app/actions';
 import { readStreamableValue } from 'ai/rsc';
@@ -13,6 +13,8 @@ export const dynamic = 'force-dynamic';
 export const maxDuration = 30;
 
 export default function StorytellerFlow() {
+    const audioRef = useRef<HTMLAudioElement>(null);
+    const [isAudioPlaying, setIsAudioPlaying] = useState(false);
     const [messages, setMessages] = useState<CoreMessage[]>([]);
     const [gameOver, setGameOver] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
@@ -74,6 +76,11 @@ export default function StorytellerFlow() {
     };
 
     const selectOption = async (text: string) => {
+        if (audioRef && audioRef.current) {
+            audioRef.current.play();
+            audioRef.current.volume = 0.2
+        }
+        setIsAudioPlaying(true)
         setIsLoading(true)
         console.log("opcion seleccionada: " + text)
         // await append({ content: options[index].text, role: 'user' })
@@ -111,6 +118,10 @@ export default function StorytellerFlow() {
 
     return (
         <div className="xl:w-2/4 w-screen min-h-screen md:bg-contain bg-center bg-no-repeat" style={{ backgroundImage: "url('/fondoPrincipal.webp')" }}>
+            <audio ref={audioRef} loop>
+                <source src="soundtrack.mp3" type="audio/mp3" />
+                Your browser does not support the audio element.
+            </audio>
             <div className="h-full flex flex-col justify-center text-gray-300 px-4 sm:px-24 max-w-[50rem] mx-auto">
                 <h1 className="text-2xl font-bold mb-12">{gameOver ? 'Fin del juego' : 'Criminologia Procedural'}</h1>
             <p>{generation && generation.consequence}</p>
