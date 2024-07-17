@@ -10,24 +10,24 @@ export const dynamic = 'force-dynamic';
 export const maxDuration = 30;
 
 type Voice = {
-  name: string;
-  lang: string;
-  default?: boolean;
-  localService?: boolean;
-  voiceURI?: string;
+    name: string;
+    lang: string;
+    default?: boolean;
+    localService?: boolean;
+    voiceURI?: string;
 };
 
 export default function StorytellerFlow() {
     const audioRef = useRef<HTMLAudioElement>(null);
     const [isAudioPlaying, setIsAudioPlaying] = useState(false);
-    const [messages, setMessages] = useState<CoreMessage[]>([]);
+    const [messages, setMessages] = useState<CoreMessage[]>([{ content: '{"consequence":"Ya hace mas de un mes que no hay ningun crimen. Hasta que una llamada de un viejo amigo irrumpe tu noche lluviosa.","option_one":"Contestar","option_two":"Ignorar","option_three":"Colgar"}', role: "assistant" }]);
     const [gameOver, setGameOver] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [generation, setGeneration] = useState({
-        "consequence": 'Eres contratado por un museo,  te enfrentas a un escenario complejo: la desaparición de la curadora en medio de un evento de alta sociedad. Una nota de rescate en la oficina de Isabel. Mientras tanto, rumores sobre un subasta en el mercado negro comienzan a circular, y las cámaras de seguridad del museo parecen haber sido manipuladas. Los medios de comunicación presionan para obtener respuestas, y el museo teme por su reputación.',
-        "option 1": 'Investigar la escena del crimen',
-        "option 2": 'Entrevistas a los familiares de la trabajadora',
-        "option 3": 'Terminar juego'
+        "consequence": 'Una llamada de un viejo amigo irrumpe tu noche lluviosa',
+        "option 1": 'Contestar LLamada',
+        "option 2": '',
+        "option 3": ''
     });
     const [speech, setSpeech] = useState<Speech | null>(null);
     const [voices, setVoices] = useState<Voice[]>([]);
@@ -90,27 +90,28 @@ export default function StorytellerFlow() {
     const selectOption = async (text: string) => {
         if (audioRef && audioRef.current) {
             audioRef.current.play();
-            audioRef.current.volume = 0.04
+            audioRef.current.volume = 0.04;
         }
-        setIsAudioPlaying(true)
-        setIsLoading(true)
-        console.log("opcion seleccionada: " + text)
-        // await append({ content: options[index].text, role: 'user' })
-        if(text != ""){
+        setIsAudioPlaying(true);
+        setIsLoading(true);
+        console.log("opcion seleccionada: " + text);
+        if (text !== "") {
+            const newMessages = [...messages, { role: 'user', content: text }];
+            setMessages(newMessages as CoreUserMessage[]);
 
-            try{
+            try {
                 const response = await fetch('/api/chat', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({
-                        messages: [...messages, { role: 'user', content: text }],
+                        messages: newMessages,
                     }),
                 });
 
                 const data = await response.json();
-                setMessages([...messages, { role: 'assistant', content: JSON.stringify(data.text) }]);
+                setMessages(prevMessages => [...prevMessages, { role: 'assistant', content: JSON.stringify(data.text) }]);
                 console.log(data.text);
                 setGeneration({
                     "consequence": data.text.consequence,
@@ -119,6 +120,7 @@ export default function StorytellerFlow() {
                     "option 3": data.text.option_three,
                 });
             } catch (e) {
+                setGeneration({ ...generation, "consequence": "Fin del Juego" });
                 console.log(e);
             }
         }
