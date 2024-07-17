@@ -20,7 +20,7 @@ export default function StorytellerFlow() {
         "consequence": 'Eres contratado por un museo,  te enfrentas a un escenario complejo: la desaparición de la curadora en medio de un evento de alta sociedad. Una nota de rescate en la oficina de Isabel. Mientras tanto, rumores sobre un subasta en el mercado negro comienzan a circular, y las cámaras de seguridad del museo parecen haber sido manipuladas. Los medios de comunicación presionan para obtener respuestas, y el museo teme por su reputación.', 
         "option 1": 'Investigar la escena del crimen',
         "option 2": 'Entrevistas a los familiares de la trabajadora',
-        "option 3": 'Abandonar caso'
+        "option 3": 'Terminar juego'
     });
 
 

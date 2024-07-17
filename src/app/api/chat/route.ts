@@ -1,5 +1,5 @@
 import { openai } from '@ai-sdk/openai';
-import { generateText, generateObject } from 'ai';
+import { generateText, generateObject, tool } from 'ai';
 import { z } from 'zod';
 import { NextResponse } from 'next/server';
 
@@ -32,11 +32,23 @@ export async function POST(req: Request) {
       15. Advertir ante una situacion peligrosa y poder evitarla en las opciones.
       `,
       messages,
+      tools: {
+        gameOver: tool({
+          //Cuando llamar a la tool
+          description: 'acabar el juego. se usa cuando el jugador muere o resuelve el crimen',
+          parameters: z.object({}),
+          //Funcion que se ejecuta cuando se llama a la tool
+          execute: async () => {
+            console.log("Game over");
+            return {};
+          }
+        }),
+      },
       //maxTokens: 400,
     });
 
     const resultTextFormated = await textToJson(result.text);
-    const resultFormated = {...result , text:resultTextFormated.notification}
+    const resultFormated = { ...result, text: resultTextFormated.notification }
     console.log(resultFormated.text);
 
     // Retornar una respuesta JSON válida
