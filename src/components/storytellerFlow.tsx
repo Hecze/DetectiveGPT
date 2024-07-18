@@ -20,11 +20,11 @@ type Voice = {
 export default function StorytellerFlow() {
     const audioRef = useRef<HTMLAudioElement>(null);
     const [isAudioPlaying, setIsAudioPlaying] = useState(false);
-    const [messages, setMessages] = useState<CoreMessage[]>([{ content: '{"consequence":"Ya hace mas de un mes que no hay ningun crimen. Hasta que una llamada de un viejo amigo irrumpe tu noche lluviosa.","option_one":"Contestar","option_two":"Ignorar","option_three":"Colgar"}', role: "assistant" }]);
+    const [messages, setMessages] = useState<CoreMessage[]>([{ content: 'Ya hace mas de un mes que no hay ningun crimen. Hasta que una llamada de un viejo amigo irrumpe tu noche lluviosa. opciones: 1. contestar, 2. ignorar, 3. colgar', role: "assistant" }]);
     const [gameOver, setGameOver] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
-    const [generation, setGeneration] = useState({
-        "consequence": 'Una llamada de un viejo amigo irrumpe tu noche lluviosa',
+    const [formattedResponse, setformattedResponse] = useState({
+        "paragraph": 'Una llamada de un viejo amigo irrumpe tu noche lluviosa',
         "option 1": 'Contestar LLamada',
         "option 2": '',
         "option 3": ''
@@ -69,7 +69,7 @@ export default function StorytellerFlow() {
     useEffect(() => {
         if (speech) {
             speech.speak({
-                text: generation.consequence,
+                text: formattedResponse.paragraph,
                 queue: false
             }).then(data => {
                 console.log("Success !", data);
@@ -77,7 +77,7 @@ export default function StorytellerFlow() {
                 console.error("An error occurred :", e);
             });
         }
-    }, [generation, speech]);
+    }, [formattedResponse, speech]);
 
     const handleVoiceChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
         const voiceName = e.target.value;
@@ -111,16 +111,20 @@ export default function StorytellerFlow() {
                 });
 
                 const data = await response.json();
-                setMessages(prevMessages => [...prevMessages, { role: 'assistant', content: JSON.stringify(data.text) }]);
-                console.log(data.text);
-                setGeneration({
-                    "consequence": data.text.consequence,
-                    "option 1": data.text.option_one,
-                    "option 2": data.text.option_two,
-                    "option 3": data.text.option_three,
+                // console.log(data)
+                const textResponse = data.message.text;
+                // console.log(textResponse);
+                const formattedResponse = data.formattedResponse;
+                // console.log(formattedResponse);
+                setMessages(prevMessages => [...prevMessages, { role: 'assistant', content: textResponse }]);
+                setformattedResponse({
+                    "paragraph": formattedResponse.paragraph,
+                    "option 1": formattedResponse.option_one,
+                    "option 2": formattedResponse.option_two,
+                    "option 3": formattedResponse.option_three,
                 });
             } catch (e) {
-                setGeneration({ ...generation, "consequence": "Fin del Juego" });
+                setformattedResponse({ ...formattedResponse, "paragraph": "Fin del Juego" });
                 console.log(e);
             }
         }
@@ -135,7 +139,7 @@ export default function StorytellerFlow() {
             </audio>
             <div className="h-full flex flex-col justify-center text-gray-300 px-4 sm:px-36 max-w-[50rem] mx-auto">
                 <h1 className="hidden 2xl:block text-2xl font-bold mb-12">{gameOver ? 'Fin del juego' : 'Criminologia Procedural'}</h1>
-                <p>{generation && generation.consequence}</p>
+                <p>{formattedResponse && formattedResponse.paragraph}</p>
                 <select onChange={handleVoiceChange} value={selectedVoice} className="hidden">
                     {voices.map(voice => (
                         <option key={voice.name} value={voice.name}>
@@ -152,9 +156,9 @@ export default function StorytellerFlow() {
                     priority
                 />
                 <div className="flex flex-col gap-4 mt-12">
-                    {generation && <Option isLoading={isLoading} text={generation["option 1"]} onClick={() => selectOption(generation["option 1"])} />}
-                    {generation && generation["option 2"] !== "" && <Option isLoading={isLoading} text={generation["option 2"]} onClick={() => selectOption(generation["option 2"])} />}
-                    {generation && generation["option 3"] !== "" && <Option isLoading={isLoading} text={generation["option 3"]} onClick={() => selectOption(generation["option 3"])} />}
+                    {formattedResponse && <Option isLoading={isLoading} text={formattedResponse["option 1"]} onClick={() => selectOption(formattedResponse["option 1"])} />}
+                    {formattedResponse && formattedResponse["option 2"] !== "" && <Option isLoading={isLoading} text={formattedResponse["option 2"]} onClick={() => selectOption(formattedResponse["option 2"])} />}
+                    {formattedResponse && formattedResponse["option 3"] !== "" && <Option isLoading={isLoading} text={formattedResponse["option 3"]} onClick={() => selectOption(formattedResponse["option 3"])} />}
                 </div>
             </div>
         </div>

@@ -14,7 +14,7 @@ export async function POST(req: Request) {
     const result = await generateText({
       // model: openai('gpt-4-turbo'), // $5.00 x millon de requests
       model: openai('gpt-3.5-turbo'), // $0.50 x millon de requests
-      system: `maximo 300 caracteres. Eres una narrador de historias interactivas. El usuario es un detective. El usuario es quien toma las decisiones. La trama es un crimen sin resolver. No uses un tono conversacional. No le hagas preguntas al usaurio.Las respuestas tendra un formato: {consecuence: continuación de la historia a causa de la ultima decision tomada, option_one : accion posible a realizar, option_two, option_three}. La trama es profunda, similar a una historia de sherlock holmes. La historia tiene giros de guion. Deja que el detective saque sus propias conclusiones. No tomar decisiones por el jugador, solo sugerirlas. Las victimas tienen nombres.
+      system: `maximo 300 caracteres. Eres una narrador de historias interactivas. El usuario es un detective. El usuario es quien toma las decisiones. La trama es un crimen sin resolver. No uses un tono conversacional. No le hagas preguntas al usaurio. La trama es profunda, similar a una historia de sherlock holmes. La historia tiene giros de guion. Deja que el detective saque sus propias conclusiones. No tomar decisiones por el jugador, solo sugerirlas. Las victimas tienen nombres. Al final de cada respuesta añade 3 opciones cortas.
       `,
 
       messages,
@@ -35,10 +35,11 @@ export async function POST(req: Request) {
 
     if (result.text != "") {
       const resultTextFormated = await textToJson(result.text);
-      const resultFormated = { ...result, text: resultTextFormated.notification }
+      //Remplazamos el texto por el JSON
+      //const resultFormated = { ...result, text: resultTextFormated.notification }
       console.log(result.text)
-      console.log(resultFormated.text);
-      return NextResponse.json(resultFormated, { status: 200 });
+      console.log(resultTextFormated);
+      return NextResponse.json({ message: result, formattedResponse: resultTextFormated }, { status: 200 });
     }
     else {
       console.log(result.text);
@@ -58,17 +59,15 @@ async function textToJson(text: string) {
 
   const { object } = await generateObject({
     model: openai('gpt-3.5-turbo'),
-    system: `Transformas texto a formato JSON. siguiendo el esquema: consequence, option_one, option_two, option_three.`,
+    system: `Transformas texto a formato JSON. siguiendo el esquema: paragraph, option_one, option_two, option_three. No modifiques el texto.`,
     prompt: text,
     maxTokens: 200,
     schema: z.object({
-      notification: z.object({
-        "consequence": z.string().describe('Narrativa principal'),
+        "paragraph": z.string().describe('Parrafo principal'),
         "option_one": z.string().describe('Primera opción posible.'),
         "option_two": z.string().describe('Segunda opción posible.'),
         "option_three": z.string().describe('Tercera opción posible.'),
       }),
-    }),
   });
 
   return object;
