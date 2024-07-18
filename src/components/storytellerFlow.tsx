@@ -5,7 +5,6 @@ import { useState, useEffect, useRef } from "react";
 import Option from "./option";
 import { CoreAssistantMessage, CoreMessage, CoreSystemMessage, CoreUserMessage } from "ai";
 import { useRouter } from 'next/navigation';
-
 // Force the page to be dynamic and allow streaming responses up to 30 seconds
 export const dynamic = 'force-dynamic';
 export const maxDuration = 30;
@@ -33,8 +32,8 @@ export default function StorytellerFlow() {
     const [speech, setSpeech] = useState<Speech | null>(null);
     const [voices, setVoices] = useState<Voice[]>([]);
     const [selectedVoice, setSelectedVoice] = useState<string>('');
+    const [voicesNames, setVoicesNames] = useState<string[]>([]);
     const router = useRouter();
-
     useEffect(() => {
         const speechInstance = new Speech();
         speechInstance.init({
@@ -53,7 +52,7 @@ export default function StorytellerFlow() {
                         voiceURI: voice.voiceURI
                     }));
                     setVoices(formattedVoices);
-                    const defaultVoice = formattedVoices.find(voice => voice.name === "Microsoft Sabina - Spanish (Mexico)");
+                    const defaultVoice = formattedVoices.find(voice => voice.name === "Google español");
                     if (defaultVoice) {
                         setSelectedVoice(defaultVoice.name);
                         speechInstance.setVoice(defaultVoice.name);
@@ -81,12 +80,24 @@ export default function StorytellerFlow() {
         }
     }, [formattedResponse, speech]);
 
+    useEffect(() => {
+        if (speech && selectedVoice) {
+            speech.setVoice(selectedVoice);
+            speech.speak({
+                text: formattedResponse.paragraph,
+                queue: false
+            }).then(data => {
+                console.log("Success !", data);
+            }).catch(e => {
+                console.error("An error occurred :", e);
+            });
+        }
+    }, [selectedVoice]);
+
     const handleVoiceChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
         const voiceName = e.target.value;
+        console.log("voice selected: " + voiceName);
         setSelectedVoice(voiceName);
-        if (speech) {
-            speech.setVoice(voiceName);
-        }
     };
 
     const selectOption = async (text: string) => {
@@ -128,7 +139,7 @@ export default function StorytellerFlow() {
             } catch (e) {
                 setformattedResponse({ ...formattedResponse, "paragraph": "Fin del Juego" });
                 console.log(e);
-                setTimeout(()=> {
+                setTimeout(() => {
                     router.push('/endgame');
                 }, 2000)
             }
@@ -145,13 +156,23 @@ export default function StorytellerFlow() {
             <div className="h-full flex flex-col justify-center text-gray-300 px-4 sm:px-36 max-w-[50rem] mx-auto">
                 <h1 className="hidden 2xl:block text-2xl font-bold mb-12">{gameOver ? 'Fin del juego' : 'Criminologia Procedural'}</h1>
                 <p>{formattedResponse && formattedResponse.paragraph}</p>
-                <select onChange={handleVoiceChange} value={selectedVoice} className="hidden">
-                    {voices.map(voice => (
-                        <option key={voice.name} value={voice.name}>
-                            {voice.name} ({voice.lang})
+                <h6 className="font-semibold mt-4">Voz de lectura:</h6>
+                <select
+                    onChange={handleVoiceChange}
+                    className="max-w-xs bg-[#413A32] rounded-xl px-4 py-2 mt-2"
+                    value={selectedVoice}
+                >
+                    {voices.map((voice) => (
+                        <option
+                            key={voice.name}
+                            value={voice.name}
+                            className="text-white"
+                        >
+                            {voice.name}
                         </option>
                     ))}
                 </select>
+
                 <Image
                     src="/separador.webp"
                     alt="separador"
