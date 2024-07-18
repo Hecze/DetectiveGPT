@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useState, useEffect, useRef } from "react";
 import Option from "./option";
 import { CoreAssistantMessage, CoreMessage, CoreSystemMessage, CoreUserMessage } from "ai";
+import { useRouter } from 'next/navigation';
 
 // Force the page to be dynamic and allow streaming responses up to 30 seconds
 export const dynamic = 'force-dynamic';
@@ -32,6 +33,7 @@ export default function StorytellerFlow() {
     const [speech, setSpeech] = useState<Speech | null>(null);
     const [voices, setVoices] = useState<Voice[]>([]);
     const [selectedVoice, setSelectedVoice] = useState<string>('');
+    const router = useRouter();
 
     useEffect(() => {
         const speechInstance = new Speech();
@@ -126,6 +128,9 @@ export default function StorytellerFlow() {
             } catch (e) {
                 setformattedResponse({ ...formattedResponse, "paragraph": "Fin del Juego" });
                 console.log(e);
+                setTimeout(()=> {
+                    router.push('/endgame');
+                }, 2000)
             }
         }
         setIsLoading(false);
