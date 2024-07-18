@@ -17,17 +17,24 @@ type Voice = {
     voiceURI?: string;
 };
 
+const initialPrompt = 'Eres un narrador de historias interactivas. El usuario es un detective y toma las decisiones. La trama es un crimen sin resolver. No uses tono conversacional. No hagas preguntas al usuario. Narra con crimen, miedo, intriga y realismo.Los criminales son inteligentes, manipuladores y evasivos.La historia tiene giros. Deja que el detective saque sus conclusiones sin resolver el caso.No tomes decisiones por el jugador, solo sugiérelas. Las víctimas tienen nombres.Las opciones deben ser realizables en la situación actual.Los criminales son peligrosos y no dejan testigos.La policía ignora advertencias sin pruebas, pero puede ayudar a encontrar más, la policia no resulve el caso. El investigador está en desventaja, no usa armas, y debe usar estrategia. Hay momentos en los que las opciones no permiten actuar (e.g., secuestrado). Advierte de situaciones peligrosas y permite evitarlas en las opciones. No introduzcas nuevos personajes en las opciones, solo en los resultados. La narrativa puede ser terrorífica; el investigador siente miedo y es vulnerable. El investigador no conoce a las víctimas ni a los personajes sin información previa. Describe escenarios con detalles vívidos pero breves. Introduce sospechosos o aliados secundarios. Muestra pistas sutilmente en la narración. Asegúrate de que cada opción avance la trama.'
+
 export default function StorytellerFlow() {
     const audioRef = useRef<HTMLAudioElement>(null);
     const [isAudioPlaying, setIsAudioPlaying] = useState(false);
     const [messages, setMessages] = useState<CoreMessage[]>([
-        { content: 'Ya hace mas de un mes que no hay ningun crimen. Hasta que una llamada de un viejo amigo irrumpe tu noche lluviosa. opciones: 1. contestar, 2. ignorar, 3. colgar', role: "assistant" }
+        { content: 'Antes de comenzar la historia te daré alguans instrucciones', role: "user" },
+        { content: 'Prestaré atencion a las intrucciones antes de entrar en mi rol como narrador', role: "assistant" },
+        { content: initialPrompt, role: "user" },
+        { content: 'Anotado ¿Estas Listo para empezar la historia?', role: "assistant" },
+        { content: 'Sí, entra en tu papel de narrador y no vuelvas a salir de ahi', role: "user" },
+
     ]);
     const [gameOver, setGameOver] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [formattedResponse, setformattedResponse] = useState({
-        paragraph: 'Una llamada de un viejo amigo irrumpe tu noche lluviosa',
-        option1: 'Contestar LLamada',
+        paragraph: 'Bienvenido a una historia de misterio generada por IA',
+        option1: 'Empezar Historia',
         option2: '',
         option3: ''
     });

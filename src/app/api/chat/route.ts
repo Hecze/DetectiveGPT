@@ -14,9 +14,12 @@ export async function POST(req: Request) {
     const result = await generateText({
       // model: openai('gpt-4-turbo'), // $5.00 x millon de requests
       model: openai('gpt-3.5-turbo'), // $0.50 x millon de requests
-      system: `maximo 300 caracteres. Eres una narrador de historias interactivas. El usuario es un detective. El usuario es quien toma las decisiones. La trama es un crimen sin resolver. No uses un tono conversacional. No le hagas preguntas al usaurio. La trama es profunda, similar a una historia de sherlock holmes. La historia tiene giros de guion. Deja que el detective saque sus propias conclusiones. No tomar decisiones por el jugador, solo sugerirlas. Las victimas tienen nombres. Al final de cada respuesta añade 3 opciones cortas.
+      system: `maximo 300 caracteres. Eres una narrador de historias interactivas. El usuario es un detective. El usuario es quien toma las decisiones. La trama es un crimen sin resolver. No uses un tono conversacional. No le hagas preguntas al usuario. La trama es profunda, similar a una historia de sherlock holmes. La historia tiene giros de guion. Al final de cada respuesta añade 3 opciones cortas. Ejemplo:
+      parrafo de la historia
+      opcion 1: ...,
+      opcion 2: ...,
+      opcion 3: ...,
       `,
-
       messages,
       tools: {
         gameOver: tool({
