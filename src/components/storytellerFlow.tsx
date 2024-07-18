@@ -5,7 +5,7 @@ import { useState, useEffect, useRef } from "react";
 import Option from "./option";
 import { CoreAssistantMessage, CoreMessage, CoreSystemMessage, CoreUserMessage } from "ai";
 import { useRouter } from 'next/navigation';
-// Force the page to be dynamic and allow streaming responses up to 30 seconds
+
 export const dynamic = 'force-dynamic';
 export const maxDuration = 30;
 
@@ -20,20 +20,22 @@ type Voice = {
 export default function StorytellerFlow() {
     const audioRef = useRef<HTMLAudioElement>(null);
     const [isAudioPlaying, setIsAudioPlaying] = useState(false);
-    const [messages, setMessages] = useState<CoreMessage[]>([{ content: 'Ya hace mas de un mes que no hay ningun crimen. Hasta que una llamada de un viejo amigo irrumpe tu noche lluviosa. opciones: 1. contestar, 2. ignorar, 3. colgar', role: "assistant" }]);
+    const [messages, setMessages] = useState<CoreMessage[]>([
+        { content: 'Ya hace mas de un mes que no hay ningun crimen. Hasta que una llamada de un viejo amigo irrumpe tu noche lluviosa. opciones: 1. contestar, 2. ignorar, 3. colgar', role: "assistant" }
+    ]);
     const [gameOver, setGameOver] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [formattedResponse, setformattedResponse] = useState({
-        "paragraph": 'Una llamada de un viejo amigo irrumpe tu noche lluviosa',
-        "option 1": 'Contestar LLamada',
-        "option 2": '',
-        "option 3": ''
+        paragraph: 'Una llamada de un viejo amigo irrumpe tu noche lluviosa',
+        option1: 'Contestar LLamada',
+        option2: '',
+        option3: ''
     });
     const [speech, setSpeech] = useState<Speech | null>(null);
     const [voices, setVoices] = useState<Voice[]>([]);
     const [selectedVoice, setSelectedVoice] = useState<string>('');
-    const [voicesNames, setVoicesNames] = useState<string[]>([]);
     const router = useRouter();
+
     useEffect(() => {
         const speechInstance = new Speech();
         speechInstance.init({
@@ -124,20 +126,17 @@ export default function StorytellerFlow() {
                 });
 
                 const data = await response.json();
-                // console.log(data)
                 const textResponse = data.message.text;
-                // console.log(textResponse);
                 const formattedResponse = data.formattedResponse;
-                // console.log(formattedResponse);
                 setMessages(prevMessages => [...prevMessages, { role: 'assistant', content: textResponse }]);
                 setformattedResponse({
-                    "paragraph": formattedResponse.paragraph,
-                    "option 1": formattedResponse.option_one,
-                    "option 2": formattedResponse.option_two,
-                    "option 3": formattedResponse.option_three,
+                    paragraph: formattedResponse.paragraph,
+                    option1: formattedResponse.option_one,
+                    option2: formattedResponse.option_two,
+                    option3: formattedResponse.option_three,
                 });
             } catch (e) {
-                setformattedResponse({ ...formattedResponse, "paragraph": "Fin del Juego" });
+                setformattedResponse({ ...formattedResponse, paragraph: "Fin del Juego" });
                 console.log(e);
                 setTimeout(() => {
                     router.push('/endgame');
@@ -146,6 +145,35 @@ export default function StorytellerFlow() {
         }
         setIsLoading(false);
     };
+
+    const VoiceSelector = () => (
+        <div className="hidden xl:block">
+            <h6 className="font-semibold mt-4">Voz de lectura:</h6>
+            <select
+                onChange={handleVoiceChange}
+                className="max-w-xs bg-[#413A32] rounded-xl px-4 py-2 mt-2"
+                value={selectedVoice}
+            >
+                {voices.map((voice) => (
+                    <option
+                        key={voice.name}
+                        value={voice.name}
+                        className="text-white"
+                    >
+                        {voice.name}
+                    </option>
+                ))}
+            </select>
+        </div>
+    );
+
+    const Options = () => (
+        <div className="flex flex-col gap-4 mt-12">
+            {formattedResponse && <Option isLoading={isLoading} text={formattedResponse.option1} onClick={() => selectOption(formattedResponse.option1)} />}
+            {formattedResponse && formattedResponse.option2 !== "" && <Option isLoading={isLoading} text={formattedResponse.option2} onClick={() => selectOption(formattedResponse.option2)} />}
+            {formattedResponse && formattedResponse.option3 !== "" && <Option isLoading={isLoading} text={formattedResponse.option3} onClick={() => selectOption(formattedResponse.option3)} />}
+        </div>
+    )
 
     return (
         <div className="xl:w-2/4 w-screen min-h-screen md:bg-contain bg-center bg-no-repeat" style={{ backgroundImage: "url('/fondoPrincipal.webp')" }}>
@@ -156,23 +184,7 @@ export default function StorytellerFlow() {
             <div className="h-full flex flex-col justify-center text-gray-300 px-4 sm:px-36 max-w-[50rem] mx-auto">
                 <h1 className="hidden 2xl:block text-2xl font-bold mb-12">{gameOver ? 'Fin del juego' : 'Criminologia Procedural'}</h1>
                 <p>{formattedResponse && formattedResponse.paragraph}</p>
-                <h6 className="font-semibold mt-4">Voz de lectura:</h6>
-                <select
-                    onChange={handleVoiceChange}
-                    className="max-w-xs bg-[#413A32] rounded-xl px-4 py-2 mt-2"
-                    value={selectedVoice}
-                >
-                    {voices.map((voice) => (
-                        <option
-                            key={voice.name}
-                            value={voice.name}
-                            className="text-white"
-                        >
-                            {voice.name}
-                        </option>
-                    ))}
-                </select>
-
+                <VoiceSelector />
                 <Image
                     src="/separador.webp"
                     alt="separador"
@@ -181,11 +193,7 @@ export default function StorytellerFlow() {
                     className="xl:max-w-2/4"
                     priority
                 />
-                <div className="flex flex-col gap-4 mt-12">
-                    {formattedResponse && <Option isLoading={isLoading} text={formattedResponse["option 1"]} onClick={() => selectOption(formattedResponse["option 1"])} />}
-                    {formattedResponse && formattedResponse["option 2"] !== "" && <Option isLoading={isLoading} text={formattedResponse["option 2"]} onClick={() => selectOption(formattedResponse["option 2"])} />}
-                    {formattedResponse && formattedResponse["option 3"] !== "" && <Option isLoading={isLoading} text={formattedResponse["option 3"]} onClick={() => selectOption(formattedResponse["option 3"])} />}
-                </div>
+                <Options />
             </div>
         </div>
     );
