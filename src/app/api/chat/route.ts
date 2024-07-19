@@ -25,8 +25,7 @@ export async function POST(req: Request) {
       opcion 2: hablar con pedro
       opcion 3: ...,
       `,
-      messages: messages.
-        storyteller,
+      messages: messages.storyteller,
       tools: {
         gameOver: tool({
           //Cuando llamar a la tool
@@ -44,27 +43,29 @@ export async function POST(req: Request) {
           //Cuando llamar a la tool
           description: 'Se ejecuta cuando el jugador empieza a hablar con un npc',
           parameters: z.object({
-            name: z.string().describe('El nombre del npc. Puede ser maria o pedro'),
-            prompt: z.string().describe('Contexto que el npc necesita para cumplir su papel. por ejemplo: "eres maria, una chica implicada en un crimen"'),
-            // messages: messages
+            name: z.string().describe('El nombre del personaje. Puede ser maria o pedro'),
+            prompt: z.string().describe('Mensaje para el personaje. por ejemplo: "eres Pedro, una chico implicado en un crimen"'),
           }),
           //Funcion que se ejecuta cuando se llama a la tool
           execute: async ({ name, prompt }) => {
             console.log("speakingWithNpc");
             console.log("name: " + name, "\nprompt: " + prompt);
             currentAgent = name.toLowerCase() as "maria" | "pedro";
-            const response = await speakWithNpc(name, prompt);
+            const response = await speakWithNpc(name, prompt, messages[currentAgent] as CoreMessage[]);
             npcResponse = response;
-            console.log(response);
+            console.log("Respuesta del npc : " + response);
           }
         }),
       },
       //maxTokens: 400,
     });
+    console.log(`Chat API's result: ${result}`);
+
+
     if (npcResponse != "") {
+      console.log(`Chat API's npcResponse: ${npcResponse}`);
       return NextResponse.json({ message: npcResponse, currentAgent }, { status: 200 });
     }
-    console.log(`Chat API's result: ${result}`);
 
     if (gameOver) {
       console.log("Game over");
@@ -75,7 +76,7 @@ export async function POST(req: Request) {
       //Remplazamos el texto por el JSON
       //const resultFormated = { ...result, text: resultTextFormated.notification }
       console.log(`Chat API's result.text: ${result.text}`);
-      console.log(`Chat API's resultTextFormated: ${resultTextFormated}`);
+      console.log(`Chat API's resultTextFormated: ${JSON.stringify(resultTextFormated)}`);
       return NextResponse.json({ message: result, formattedResponse: resultTextFormated, currentAgent }, { status: 200 });
     }
     else {
@@ -110,29 +111,27 @@ async function textToJson(text: string) {
 }
 
 
-async function speakWithNpc(name: string, prompt: string) {
+async function speakWithNpc(name: string, prompt: string, messages: CoreMessage[]) {
   'use server';
-  console.log("name: " + name, "\nprompt: " + prompt);
-  const npcName = name.toLowerCase();
-  // console.log(messages[npcName]);
+  console.log("name: " + name, "\nprompt: " + prompt, "\nmessages: " + JSON.stringify(messages));
+
   const result = await generateText({
     model: openai('gpt-3.5-turbo'),
-    system: `Eres un personaje en una novela de misterio. Tu nombre es ${name}. Habla en primera persona, con respuestas cortas. `,
-    // messages: messages[npcName],
-    prompt: prompt,
+    system: `Maximo 150 caracteres. Eres un personaje en una novela de misterio. Tu nombre es ${name}. Habla en primera persona, con respuestas cortas. No eres el investigador. El investigador te entrevistara para encontrar pruebas`,
+    messages: messages,
     maxTokens: 200,
-    tools: {
-      endFlow: tool({
-        //Cuando llamar a la tool
-        description: 'Se ejecuta cuando se termina la conversacion con el personaje',
-        parameters: z.object({ resume: z.string().describe('Resumen de la conversacion') }),
-        //Funcion que se ejecuta cuando se llama a la tool
-        execute: async ({ resume }) => {
-          console.log("Resumen: " + resume);
-          return resume;
-        }
-      })
-    }
+    // tools: {
+    //   endFlow: tool({
+    //     //Cuando llamar a la tool
+    //     description: 'Se ejecuta cuando se termina la conversacion con el personaje',
+    //     parameters: z.object({ resume: z.string().describe('Resumen de la conversacion') }),
+    //     //Funcion que se ejecuta cuando se llama a la tool
+    //     execute: async ({ resume }) => {
+    //       console.log("Resumen: " + resume);
+    //       return resume;
+    //     }
+    //   })
+    // }
   });
 
   return result.text;

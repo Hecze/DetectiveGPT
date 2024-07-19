@@ -5,7 +5,6 @@ import { useState, useEffect, useRef, SetStateAction, ChangeEvent } from "react"
 import { IoSendSharp } from "react-icons/io5";
 import Option from "./option";
 import { CoreAssistantMessage, CoreMessage, CoreSystemMessage, CoreUserMessage } from "ai";
-import { useRouter } from 'next/navigation';
 import Endgame from "./endgame";
 import { resumeStory } from "@/app/actions";
 
@@ -58,7 +57,7 @@ export default function StorytellerFlow() {
         maria: [] as CoreMessage[],
         pedro: [] as CoreMessage[],
     });
-    const [currentAgent, setCurrentAgent] = useState("storyteller");
+    const [currentAgent, setCurrentAgent] = useState<"storyteller" | "maria" | "pedro">("storyteller");
     const [gameOver, setGameOver] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [formattedResponse, setformattedResponse] = useState({
@@ -74,7 +73,6 @@ export default function StorytellerFlow() {
     const [selectedVoice, setSelectedVoice] = useState<string>('');
     const [inputValue, setInputValue] = useState<string>('');
     const [storySummary, setStorySummary] = useState<string>('')
-    const router = useRouter();
 
     useEffect(() => {
         const speechInstance = new Speech();
@@ -168,12 +166,10 @@ export default function StorytellerFlow() {
                 { role: 'user', content: text } as CoreUserMessage
             ];
 
-            const newMessages = {
+            const newMessages1 = {
                 ...messages,
                 storyteller: newStorytellerMessages
             }
-
-            setMessages(newMessages);
 
             try {
                 const response = await fetch('/api/chat', {
@@ -182,14 +178,17 @@ export default function StorytellerFlow() {
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({
-                        messages: newMessages,
+                        messages: newMessages1,
                     }),
                 });
 
                 const data = await response.json();
-                const currentAgent = data.currentAgent;
-                if (currentAgent === "storyteller") {
-                    setCurrentAgent("storyteller");
+                const newCurrentAgent: "storyteller" | "maria" | "pedro" = data.currentAgent;
+                if (!newCurrentAgent) {
+                    //devolver error
+                    throw new Error("El servidor devolvio 400, currentAgent no existe");
+                }
+                if (newCurrentAgent === "storyteller") {
                     const textResponse = data.message.text;
                     const formattedResponse = data.formattedResponse;
                     setformattedResponse({
@@ -199,22 +198,42 @@ export default function StorytellerFlow() {
                         option3: formattedResponse.option_three,
                     });
                     const newStorytellerMessages = [
-                        ...messages.storyteller,
+                        ...newMessages1.storyteller,
                         { role: 'assistant', content: textResponse } as CoreAssistantMessage
                     ];
 
-                    const newMessages = {
+                    const newMessages2 = {
                         ...messages,
                         storyteller: newStorytellerMessages
                     }
-                    setMessages(newMessages);
+                    setMessages(newMessages2);
                 }
                 else {
                     console.log("se está hablando con un npc")
                     console.log(data);
-                    setCurrentAgent(data.currentAgent);
+                    console.log(newCurrentAgent);
+                    const newAgentMessages = [
+                        ...messages[newCurrentAgent],
+                        { role: 'assistant', content: data.message } as CoreAssistantMessage
+                    ];
+
+                    const newStorytellerMessages = [
+                        ...messages.storyteller,
+                        { role: 'user', content: text } as CoreUserMessage
+                    ];
+
+
+                    const newMessages = {
+                        ...messages,
+                        storyteller: newStorytellerMessages,
+                        [newCurrentAgent]: newAgentMessages
+                    }
+
+                    setMessages(newMessages);
                     setNpcDialogue(data.message);
+
                 }
+                setCurrentAgent(data.currentAgent)
 
             } catch (e) {
                 setformattedResponse({ ...formattedResponse, paragraph: "Fin del Juego" });
@@ -258,10 +277,62 @@ export default function StorytellerFlow() {
     )
 
 
-    const handleSendResponse = () => {
+    const handleSendResponse = async () => {
         console.log(inputValue);
-        selectOption(inputValue);
         setInputValue("");
+        console.log(currentAgent);
+
+        if (inputValue !== "") {
+            const newAgentMessages = [
+                ...messages[currentAgent],
+                { role: 'user', content: inputValue } as CoreUserMessage
+            ];
+
+            const newMessages = {
+                ...messages,
+                [currentAgent]: newAgentMessages
+            }
+
+            setMessages(newMessages);
+
+            try {
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        messages: newMessages,
+                    }),
+                });
+
+                const data = await response.json();
+                console.log(data);
+                const newCurrentAgent: "storyteller" | "maria" | "pedro" = data.currentAgent;
+                if (currentAgent) {
+                    const newAgentMessages = [
+                        ...messages[newCurrentAgent],
+                        { role: 'user', content: inputValue } as CoreUserMessage,
+                        { role: 'assistant', content: data.message } as CoreAssistantMessage
+                    ];
+
+                    const newMessages = {
+                        ...messages,
+                        [newCurrentAgent]: newAgentMessages
+                    }
+
+                    setMessages(newMessages);;
+                    setNpcDialogue(data.message);
+                }
+                else {
+                    console.log("Error del servidor")
+                }
+
+            } catch (e) {
+                console.log(e);
+            }
+        }
+
 
     };
 
@@ -290,45 +361,45 @@ export default function StorytellerFlow() {
         <>
             {!gameOver ?
                 <div className="xl:w-2/4 w-screen min-h-screen md:bg-contain bg-center bg-no-repeat" style={{ backgroundImage: "url('/fondoPrincipal.webp')" }}>
-            <audio ref={audioRef} loop>
-                <source src="soundtrack.mp3" type="audio/mp3" />
-                Your browser does not support the audio element.
-            </audio>
-            <div className="h-full flex flex-col justify-center text-gray-300 px-4 sm:px-36 max-w-[50rem] mx-auto">
-                <h1 className="hidden 2xl:block text-2xl font-bold mb-12">{gameOver ? 'Fin del juego' : 'Criminologia Procedural'}</h1>
-                <h1 className="font-bold">{currentAgent !== "storyteller" && currentAgent.toUpperCase() + " :"}</h1>
-                <p>{currentAgent === "storyteller" ? formattedResponse && formattedResponse.paragraph : npcDialogue}</p>
-                <VoiceSelector />
-                <Image
-                    src="/separador.webp"
-                    alt="separador"
-                    width={850}
-                    height={50}
-                    className="xl:max-w-2/4"
-                    priority
-                />
-                {currentAgent === "storyteller" ? <Options /> :
-                    <div className="bg-[#413A32] rounded-xl flex flex-row mt-12 justify-center items-center">
-                        <input
-                            type="text"
-                            placeholder={`Escribe una respuesta para ${currentAgent}...`}
-                            value={inputValue}
-                            key="input"
-                            onChange={e => setInputValue(e.target.value)}
-                            className="p-4 bg-[#413A32] rounded-xl w-full focus:outline-none"
+                    <audio ref={audioRef} loop>
+                        <source src="soundtrack.mp3" type="audio/mp3" />
+                        Your browser does not support the audio element.
+                    </audio>
+                    <div className="h-full flex flex-col justify-center text-gray-300 px-4 sm:px-36 max-w-[50rem] mx-auto">
+                        <h1 className="hidden 2xl:block text-2xl font-bold mb-12">{gameOver ? 'Fin del juego' : 'Criminologia Procedural'}</h1>
+                        <h1 className="font-bold">{currentAgent !== "storyteller" && currentAgent.toUpperCase() + " :"}</h1>
+                        <p>{currentAgent === "storyteller" ? formattedResponse && formattedResponse.paragraph : npcDialogue}</p>
+                        <VoiceSelector />
+                        <Image
+                            src="/separador.webp"
+                            alt="separador"
+                            width={850}
+                            height={50}
+                            className="xl:max-w-2/4"
+                            priority
                         />
-                        <button
-                            disabled={isLoading}
-                            className="cursor-pointer p-2 mr-4"
-                            onClick={handleSendResponse}
-                        >
-                            <IoSendSharp size={24} />
-                        </button>
-                    </div>
-                }
+                        {currentAgent === "storyteller" ? <Options /> :
+                            <div className="bg-[#413A32] rounded-xl flex flex-row mt-12 justify-center items-center">
+                                <input
+                                    type="text"
+                                    placeholder={`Escribe una respuesta para ${currentAgent}...`}
+                                    value={inputValue}
+                                    key="input"
+                                    onChange={e => setInputValue(e.target.value)}
+                                    className="p-4 bg-[#413A32] rounded-xl w-full focus:outline-none"
+                                />
+                                <button
+                                    disabled={isLoading}
+                                    className="cursor-pointer p-2 mr-4"
+                                    onClick={handleSendResponse}
+                                >
+                                    <IoSendSharp size={24} />
+                                </button>
+                            </div>
+                        }
 
-            </div>
-        </div>
+                    </div>
+                </div>
                 :
                 <Endgame storyConclusion={messages.storyteller.slice(-1)[0].content.toString()} storySummary={storySummary} />}
         </>
