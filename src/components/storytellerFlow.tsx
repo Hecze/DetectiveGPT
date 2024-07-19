@@ -53,7 +53,7 @@ const initialStorytellerMessages: CoreMessage[] = [
 export default function StorytellerFlow() {
     const audioRef = useRef<HTMLAudioElement>(null);
     const [isAudioPlaying, setIsAudioPlaying] = useState(false);
-    const [messages, setMessages] = useState({
+    const [agentContextManager, setAgentContextManager] = useState({
         storyteller: initialStorytellerMessages,
         maria: [] as CoreMessage[],
         pedro: [] as CoreMessage[],
@@ -137,7 +137,7 @@ export default function StorytellerFlow() {
 
     const createStorySummary = async () => {
         const initialValue = '';
-        const sumWithInitial = messages.storyteller.reduce(
+        const sumWithInitial = agentContextManager.storyteller.reduce(
             (accumulator, currentValue) => accumulator + `${currentValue.role}: ${currentValue.content}\n`,
             initialValue,
         );
@@ -162,70 +162,47 @@ export default function StorytellerFlow() {
         setIsLoading(true);
         console.log("opcion seleccionada: " + text);
         if (text !== "") {
-            const newStorytellerMessages = [
-                ...messages.storyteller,
+            //Nuestra respuesta debe almacenarse en el ultimo agente, al que respondimos.                  
+            const lastAgentMessages = [
+                ...agentContextManager[currentAgent],
                 { role: 'user', content: text } as CoreUserMessage
             ];
 
-            const newMessages1 = {
-                ...messages,
-                storyteller: newStorytellerMessages
+            const newAgentsMessages = {
+                ...agentContextManager,
+                [currentAgent]: lastAgentMessages,
             }
 
             try {
 
-                const data = await fetchOpenAI(newMessages1);
+                const data = await fetchOpenAI(newAgentsMessages);
                 console.log(data)
                 const newCurrentAgent: "storyteller" | "maria" | "pedro" = data.currentAgent;
-                if (!newCurrentAgent) {
-                    //devolver error
-                    throw new Error("El servidor devolvio 400, currentAgent no existe");
+                console.log("Le hablamos al agente: " + currentAgent);
+                console.log("Nos responde el agente: " + newCurrentAgent)
+                const formattedResponse = data.formattedResponse;
+                setformattedResponse(formattedResponse);
+
+                //Nuestra respuesta debe almacenarse en el ultimo agente, al que respondimos, no en el agente actual                     
+                const lastAgentMessages = [
+                    ...agentContextManager[currentAgent],
+                    { role: 'user', content: text } as CoreUserMessage
+                ];
+
+                //El mensaje del agente debe almacenarse en el agente actual   
+                const newAgentMessages = [
+                    ...agentContextManager[newCurrentAgent],
+                    { role: 'assistant', content: data.agentResponse } as CoreAssistantMessage
+                ];
+
+                const newMessages = {
+                    ...agentContextManager,
+                    [currentAgent]: lastAgentMessages,
+                    [newCurrentAgent]: newAgentMessages
                 }
-                if (newCurrentAgent === "storyteller") {
-                    const textResponse = data.agentResponse;
-                    const formattedResponse = data.formattedResponse;
-                    setformattedResponse({
-                        paragraph: formattedResponse.paragraph,
-                        option1: formattedResponse.option1,
-                        option2: formattedResponse.option2,
-                        option3: formattedResponse.option3,
-                    });
-                    const newStorytellerMessages = [
-                        ...newMessages1.storyteller,
-                        { role: 'assistant', content: textResponse } as CoreAssistantMessage
-                    ];
 
-                    const newMessages2 = {
-                        ...messages,
-                        storyteller: newStorytellerMessages
-                    }
-                    setMessages(newMessages2);
-                }
-                else {
-                    console.log("se está hablando con un npc")
-                    console.log(data);
-                    console.log(newCurrentAgent);
-                    const newAgentMessages = [
-                        ...messages[newCurrentAgent],
-                        { role: 'assistant', content: data.agentResponse } as CoreAssistantMessage
-                    ];
-
-                    const newStorytellerMessages = [
-                        ...messages.storyteller,
-                        { role: 'user', content: text } as CoreUserMessage
-                    ];
-
-
-                    const newMessages = {
-                        ...messages,
-                        storyteller: newStorytellerMessages,
-                        [newCurrentAgent]: newAgentMessages
-                    }
-
-                    setMessages(newMessages);
-                    setNpcDialogue(data.agentResponse);
-
-                }
+                setAgentContextManager(newMessages);
+                setNpcDialogue(data.agentResponse);
                 setCurrentAgent(data.currentAgent)
 
             } catch (e) {
@@ -277,16 +254,16 @@ export default function StorytellerFlow() {
 
         if (inputValue !== "") {
             const newAgentMessages = [
-                ...messages[currentAgent],
+                ...agentContextManager[currentAgent],
                 { role: 'user', content: inputValue } as CoreUserMessage
             ];
 
             const newMessages = {
-                ...messages,
+                ...agentContextManager,
                 [currentAgent]: newAgentMessages
             }
 
-            setMessages(newMessages);
+            setAgentContextManager(newMessages);
 
             try {
                 const data = await fetchOpenAI(newMessages);
@@ -295,17 +272,17 @@ export default function StorytellerFlow() {
                 const newCurrentAgent: "storyteller" | "maria" | "pedro" = data.currentAgent;
                 if (currentAgent) {
                     const newAgentMessages = [
-                        ...messages[newCurrentAgent],
+                        ...agentContextManager[newCurrentAgent],
                         { role: 'user', content: inputValue } as CoreUserMessage,
                         { role: 'assistant', content: data.agentResponse } as CoreAssistantMessage
                     ];
 
                     const newMessages = {
-                        ...messages,
+                        ...agentContextManager,
                         [newCurrentAgent]: newAgentMessages
                     }
 
-                    setMessages(newMessages);;
+                    setAgentContextManager(newMessages);;
                     setNpcDialogue(data.agentResponse);
                 }
                 else {
@@ -385,7 +362,7 @@ export default function StorytellerFlow() {
                     </div>
                 </div>
                 :
-                <Endgame storyConclusion={messages.storyteller.slice(-1)[0].content.toString()} storySummary={storySummary} />}
+                <Endgame storyConclusion={agentContextManager.storyteller.slice(-1)[0].content.toString()} storySummary={storySummary} />}
         </>
     );
 }
