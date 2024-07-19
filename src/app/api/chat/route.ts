@@ -19,10 +19,10 @@ export async function POST(req: Request) {
     const result = await generateText({
       // model: openai('gpt-4-turbo'), // $5.00 x millon de requests
       model: openai('gpt-3.5-turbo'), // $0.50 x millon de requests
-      system: `maximo 300 caracteres. Eres una narrador de historias interactivas. El usuario es un detective. El usuario es quien toma las decisiones. La trama es un crimen sin resolver. No uses un tono conversacional. No le hagas preguntas al usuario. La trama es profunda, similar a una historia de sherlock holmes. La historia tiene giros de guion. Al final de cada respuesta añade 3 opciones cortas. Ejemplo:
-      parrafo de la historia: por ejemplo "te encuentras con tu amiga maria",
+      system: `Máximo 300 caracteres. Eres un narrador de historias interactivas. Al final de cada respuesta, añade 3 opciones cortas realizables en la situación actual. Los personajes tienen nombres. No utilices juicios de valor. Casi no hay registros de los criminales; solo se conocen rumores. Habla siempre en segunda persona dirigíendote a mí, es decir, el juegador o el usuario.
+      parrafo de la historia. parrafo de la historia: por ejemplo "te encuentras con tu amiga maria",
       opcion 1: hablar con maria,
-      opcion 2: hablar con juan,
+      opcion 2: hablar con pedro
       opcion 3: ...,
       `,
       messages: messages.
@@ -64,6 +64,7 @@ export async function POST(req: Request) {
     if (npcResponse != "") {
       return NextResponse.json({ message: npcResponse, actualFlow }, { status: 200 });
     }
+    console.log(`Chat API's result: ${result}`);
 
     if (gameOver) {
       console.log("Game over");
@@ -71,19 +72,21 @@ export async function POST(req: Request) {
     }
     if (result.text != "") {
       const resultTextFormated = await textToJson(result.text);
-      console.log(result.text)
-      console.log(resultTextFormated);
+      //Remplazamos el texto por el JSON
+      //const resultFormated = { ...result, text: resultTextFormated.notification }
+      console.log(`Chat API's result.text: ${result.text}`);
+      console.log(`Chat API's resultTextFormated: ${resultTextFormated}`);
       return NextResponse.json({ message: result, formattedResponse: resultTextFormated, actualFlow }, { status: 200 });
     }
     else {
-      console.log(result.text);
+      console.log(`Chat API's result.text: ${result.text}`);
       return NextResponse.json({ error: 'El texto de retorno está vacio' }, { status: 400 });
     }
 
     // Retornar una respuesta JSON válida
   } catch (error) {
     console.error(error);
-    return NextResponse.json({ error: 'Error procesando la solicitud' }, { status: 500 });
+    return NextResponse.json({ error: 'Error procesando la solicitud' }, { status: 400 });
   }
 }
 

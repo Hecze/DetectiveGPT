@@ -1,6 +1,6 @@
 'use server';
 
-import { CoreMessage, streamObject } from 'ai';
+import { CoreMessage, generateText, streamObject } from 'ai';
 import { openai } from '@ai-sdk/openai';
 import { createStreamableValue } from 'ai/rsc';
 import { z } from 'zod';
@@ -35,5 +35,14 @@ export async function generate(messages: CoreMessage[]) {
   return { object: stream.value };
 }
 
+export async function resumeStory(story: string) {
+  console.log(`Story to resume: ${story}`)
+  const { text } = await generateText({
+    model: openai('gpt-3.5-turbo'),
+    system: 'Recibes una historia de investigadores y la resumes en un párrafo. El formato resultante debe ser en tiempo pasado y debes poner énfasis en las partes donde hubo mayor tensión.',
+    prompt: story,
+  });
 
+  return text;
+}
 

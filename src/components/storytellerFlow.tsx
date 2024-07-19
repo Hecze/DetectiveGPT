@@ -6,7 +6,8 @@ import { IoSendSharp } from "react-icons/io5";
 import Option from "./option";
 import { CoreAssistantMessage, CoreMessage, CoreSystemMessage, CoreUserMessage } from "ai";
 import { useRouter } from 'next/navigation';
-import { Input } from "postcss";
+import Endgame from "./endgame";
+import { resumeStory } from "@/app/actions";
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 30;
@@ -19,7 +20,7 @@ type Voice = {
     voiceURI?: string;
 };
 
-const initialPrompt = 'Al inicio de la historia me permetiras hablar con dos personajes. Maria o Juan '
+const initialPrompt = 'Al inicio de la historia me permetiras hablar con dos personajes. Maria o Pedro'
 
 const initialStorytellerMessages: CoreMessage[] = [
     { content: 'Antes de comenzar la historia te daré alguans instrucciones', role: "user" },
@@ -28,6 +29,26 @@ const initialStorytellerMessages: CoreMessage[] = [
     { content: 'Anotado ¿Estas Listo para empezar la historia?', role: "assistant" },
     { content: 'Sí, entra en tu papel de narrador y no vuelvas a salir de ahi', role: "user" },
 ]
+// const initialPrompt = `
+// Las decisiones del investigador deberan tener consecuencias claras en la historia. Cada cierta cantidad de interacciones, dale al investigador la opcion de volver a conversar con los personajes sobre los avances realizados. La historia inicia presentandonos la escena de crimen y diciendonos el nombre de la victima.La historia se desarrolla desde un punto de vista de primera persona, el jugador es el investigador. Cuando sea necesario detallar algun hecho, puedes usar como medio de comunicacion de los personajes la conversacion.
+
+// El investigador puede sufrir secuestro, robo, hurto o ser asesinado, si es que es confrontado directamente con el criminal o es imprudente, tiene opcion de escape.
+
+// El investigador no sabe la identidad del criminal al inicio de la historia, lo descubrira conforme va avanzando la historia. La historia concluye si es que el investigador atrapa al criminal, se conoce su identidad y los motivos tras el crimen. Tambien la historia puede concluir si es que el investigador es asesinado. 
+
+// Define al criminal al inicio del juego, incluyendo nombre, perfil, y motivo. Mantén esta identidad constante a lo largo de la narrativa. El motivo del crimen y la identidad del asesino deben ser inalterables. No permitas cambios en estos elementos debido a las decisiones del jugador. Asegúrate de que todos los eventos y giros en la trama se basen en la historia establecida al inicio. Las decisiones del jugador pueden influir en la revelación de pruebas y en la dinámica de la investigación, pero no en la identidad de los personajes clave.
+
+// Hay momentos donde las opciones no permiten actuar (como ser secuestrado o gravemente herido). Advierte ante situaciones peligrosas y da opciones donde el investigador pueda escapar. No introduzcas nuevos personajes en las opciones, solo en los resultados de las acciones elegidas. Los personajes deben de tener antecedentes, pero no deben de ser muy ocultos. El investigador puede descrubrir estos antecedentes por medio de los mismos personajes o por otros medios.
+
+// La trama es un crimen sin resolver. La narrativa debe ser de crimen, miedo, intriga, realismo y tiene giros de guion. La trama de la historia debe ser muy elaborada. Deja que el detective saque sus propias conclusiones sin resolver el caso. No tomes decisiones por el jugador, solo sugiérelas. La narrativa puede ser terrorífica; el investigador puede sentir miedo y es vulnerable. 
+
+// El usuario es un detective o investigador que toma las decisiones. El investigador está en desventaja, no sabe usar armas y debe usar estrategia. El investigador no tiene conocimiento previo de las víctimas ni de los demás personajes, salvo si otro personaje le da esa información. El investigador no tiene conocimiento de las ubicaciones de los personajes o de sus numeros de telefono.
+
+// Los criminales son inteligentes, manipuladores, evasivos y pueden mentir. Son peligrosos y pueden matar si se ven acorralados; no dejan testigos vivos. Pueden lastimar al investigador o a otros personajes. Pueden secuestrar, herir o asesinar al investigador si es que  
+
+// La policía no ayuda al detective si no se le presentan pruebas contundentes. La policia puede ayudar a hallar más pruebas. La policia no resuelve el caso o atrapa al criminal.
+
+// Cuando el jugador resuelve el crimen debes responder con el desenlace de la historia`
 
 export default function StorytellerFlow() {
     const audioRef = useRef<HTMLAudioElement>(null);
@@ -52,6 +73,7 @@ export default function StorytellerFlow() {
     const [voices, setVoices] = useState<Voice[]>([]);
     const [selectedVoice, setSelectedVoice] = useState<string>('');
     const [inputValue, setInputValue] = useState<string>('');
+    const [storySummary, setStorySummary] = useState<string>('')
     const router = useRouter();
 
     useEffect(() => {
@@ -114,6 +136,17 @@ export default function StorytellerFlow() {
         }
     }, [selectedVoice]);
 
+    const createStorySummary = async () => {
+        const initialValue = '';
+        const sumWithInitial = messages.storyteller.reduce(
+            (accumulator, currentValue) => accumulator + `${currentValue.role}: ${currentValue.content}\n`,
+            initialValue,
+        );
+        const storySummary = await resumeStory(sumWithInitial)
+        console.log(storySummary)
+        return storySummary
+    }
+
     const handleVoiceChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
         const voiceName = e.target.value;
         console.log("voice selected: " + voiceName);
@@ -125,6 +158,7 @@ export default function StorytellerFlow() {
             audioRef.current.play();
             audioRef.current.volume = 0.04;
         }
+        // setStorySummary(await createStorySummary())
         setIsAudioPlaying(true);
         setIsLoading(true);
         console.log("opcion seleccionada: " + text);
@@ -185,9 +219,8 @@ export default function StorytellerFlow() {
             } catch (e) {
                 setformattedResponse({ ...formattedResponse, paragraph: "Fin del Juego" });
                 console.log(e);
-                setTimeout(() => {
-                    router.push('/endgame');
-                }, 2000)
+                setStorySummary(await createStorySummary())
+                setGameOver(true)
             }
         }
         setIsLoading(false);
@@ -254,7 +287,9 @@ export default function StorytellerFlow() {
     // )
 
     return (
-        <div className="xl:w-2/4 w-screen min-h-screen md:bg-contain bg-center bg-no-repeat" style={{ backgroundImage: "url('/fondoPrincipal.webp')" }}>
+        <>
+            {!gameOver ?
+                <div className="xl:w-2/4 w-screen min-h-screen md:bg-contain bg-center bg-no-repeat" style={{ backgroundImage: "url('/fondoPrincipal.webp')" }}>
             <audio ref={audioRef} loop>
                 <source src="soundtrack.mp3" type="audio/mp3" />
                 Your browser does not support the audio element.
@@ -294,5 +329,8 @@ export default function StorytellerFlow() {
 
             </div>
         </div>
+                :
+                <Endgame storyConclusion={messages.storyteller.slice(-1)[0].content.toString()} storySummary={storySummary} />}
+        </>
     );
 }
