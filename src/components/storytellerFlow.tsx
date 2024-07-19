@@ -66,6 +66,7 @@ export default function StorytellerFlow() {
     const [currentAgent, setCurrentAgent] = useState<"storyteller" | "maria" | "pedro">("storyteller");
     const [gameOver, setGameOver] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
+    const [assitantResponse, setAssitantResponse] = useState('');
     const [formattedResponse, setformattedResponse] = useState({
         paragraph: 'Bienvenido a una historia de misterio generada por IA',
         option1: 'Empezar Historia',
@@ -73,7 +74,6 @@ export default function StorytellerFlow() {
         option3: ''
     });
 
-    const [npcDialogue, setNpcDialogue] = useState('');
     const [speech, setSpeech] = useState<Speech | null>(null);
     const [voices, setVoices] = useState<Voice[]>([]);
     const [selectedVoice, setSelectedVoice] = useState<string>('Google español');
@@ -182,7 +182,7 @@ export default function StorytellerFlow() {
             // Actualizar estados
             setformattedResponse(formattedResponse);
             setAgentContextManager(finalContext);
-            setNpcDialogue(agentResponse);
+            setAssitantResponse(agentResponse);
             setCurrentAgent(nextAgent);
 
         } catch (error) {
@@ -191,7 +191,7 @@ export default function StorytellerFlow() {
             setStorySummary(await createStorySummary());
             setGameOver(true);
         }
-        
+
         setIsLoading(false);
     };
 
@@ -265,7 +265,7 @@ export default function StorytellerFlow() {
                     <div className="h-full flex flex-col justify-center text-gray-300 px-4 sm:px-36 max-w-[50rem] mx-auto">
                         <h1 className="hidden 2xl:block text-2xl font-bold mb-12">{gameOver ? 'Fin del juego' : 'Criminologia Procedural'}</h1>
                         <h1 className="font-bold">{currentAgent !== "storyteller" && currentAgent.toUpperCase() + " :"}</h1>
-                        <p>{currentAgent === "storyteller" ? formattedResponse && formattedResponse.paragraph : npcDialogue}</p>
+                        <p>{currentAgent === "storyteller" ? formattedResponse && formattedResponse.paragraph : assitantResponse}</p>
                         <VoiceSelector />
                         <Image
                             src="/separador.webp"
