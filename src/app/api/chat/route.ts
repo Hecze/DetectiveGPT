@@ -8,7 +8,7 @@ export const maxDuration = 60;
 
 export async function POST(req: Request) {
 
-  let actualFlow: "storyteller" | "maria" | "pedro" = "storyteller";
+  let currentAgent: "storyteller" | "maria" | "pedro" = "storyteller";
   let gameOver = false;
   let npcResponse = "";
 
@@ -52,7 +52,7 @@ export async function POST(req: Request) {
           execute: async ({ name, prompt }) => {
             console.log("speakingWithNpc");
             console.log("name: " + name, "\nprompt: " + prompt);
-            actualFlow = name.toLowerCase() as "maria" | "pedro";
+            currentAgent = name.toLowerCase() as "maria" | "pedro";
             const response = await speakWithNpc(name, prompt);
             npcResponse = response;
             console.log(response);
@@ -62,7 +62,7 @@ export async function POST(req: Request) {
       //maxTokens: 400,
     });
     if (npcResponse != "") {
-      return NextResponse.json({ message: npcResponse, actualFlow }, { status: 200 });
+      return NextResponse.json({ message: npcResponse, currentAgent }, { status: 200 });
     }
     console.log(`Chat API's result: ${result}`);
 
@@ -76,7 +76,7 @@ export async function POST(req: Request) {
       //const resultFormated = { ...result, text: resultTextFormated.notification }
       console.log(`Chat API's result.text: ${result.text}`);
       console.log(`Chat API's resultTextFormated: ${resultTextFormated}`);
-      return NextResponse.json({ message: result, formattedResponse: resultTextFormated, actualFlow }, { status: 200 });
+      return NextResponse.json({ message: result, formattedResponse: resultTextFormated, currentAgent }, { status: 200 });
     }
     else {
       console.log(`Chat API's result.text: ${result.text}`);

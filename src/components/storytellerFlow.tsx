@@ -58,7 +58,7 @@ export default function StorytellerFlow() {
         maria: [] as CoreMessage[],
         pedro: [] as CoreMessage[],
     });
-    const [actualFlow, setActualFlow] = useState("storyteller");
+    const [currentAgent, setCurrentAgent] = useState("storyteller");
     const [gameOver, setGameOver] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [formattedResponse, setformattedResponse] = useState({
@@ -187,9 +187,9 @@ export default function StorytellerFlow() {
                 });
 
                 const data = await response.json();
-                const actualFlow = data.actualFlow;
-                if (actualFlow === "storyteller") {
-                    setActualFlow("storyteller");
+                const currentAgent = data.currentAgent;
+                if (currentAgent === "storyteller") {
+                    setCurrentAgent("storyteller");
                     const textResponse = data.message.text;
                     const formattedResponse = data.formattedResponse;
                     setformattedResponse({
@@ -212,7 +212,7 @@ export default function StorytellerFlow() {
                 else {
                     console.log("se está hablando con un npc")
                     console.log(data);
-                    setActualFlow(data.actualFlow);
+                    setCurrentAgent(data.currentAgent);
                     setNpcDialogue(data.message);
                 }
 
@@ -270,7 +270,7 @@ export default function StorytellerFlow() {
     //     <div className="bg-[#413A32] rounded-xl flex flex-row mt-12 justify-center items-center">
     //         <input
     //             type="text"
-    //             placeholder={`Escribe una respuesta para ${actualFlow}...`}
+    //             placeholder={`Escribe una respuesta para ${currentAgent}...`}
     //             value={inputValue}
     //             key="input"
     //             onChange={e => setInputValue(e.target.value)}
@@ -296,8 +296,8 @@ export default function StorytellerFlow() {
             </audio>
             <div className="h-full flex flex-col justify-center text-gray-300 px-4 sm:px-36 max-w-[50rem] mx-auto">
                 <h1 className="hidden 2xl:block text-2xl font-bold mb-12">{gameOver ? 'Fin del juego' : 'Criminologia Procedural'}</h1>
-                <h1 className="font-bold">{actualFlow !== "storyteller" && actualFlow.toUpperCase() + " :"}</h1>
-                <p>{actualFlow === "storyteller" ? formattedResponse && formattedResponse.paragraph : npcDialogue}</p>
+                <h1 className="font-bold">{currentAgent !== "storyteller" && currentAgent.toUpperCase() + " :"}</h1>
+                <p>{currentAgent === "storyteller" ? formattedResponse && formattedResponse.paragraph : npcDialogue}</p>
                 <VoiceSelector />
                 <Image
                     src="/separador.webp"
@@ -307,11 +307,11 @@ export default function StorytellerFlow() {
                     className="xl:max-w-2/4"
                     priority
                 />
-                {actualFlow === "storyteller" ? <Options /> :
+                {currentAgent === "storyteller" ? <Options /> :
                     <div className="bg-[#413A32] rounded-xl flex flex-row mt-12 justify-center items-center">
                         <input
                             type="text"
-                            placeholder={`Escribe una respuesta para ${actualFlow}...`}
+                            placeholder={`Escribe una respuesta para ${currentAgent}...`}
                             value={inputValue}
                             key="input"
                             onChange={e => setInputValue(e.target.value)}
