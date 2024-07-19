@@ -1,10 +1,12 @@
 "use client"
 import Speech from "speak-tts";
 import Image from "next/image";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, SetStateAction, ChangeEvent } from "react";
+import { IoSendSharp } from "react-icons/io5";
 import Option from "./option";
 import { CoreAssistantMessage, CoreMessage, CoreSystemMessage, CoreUserMessage } from "ai";
 import { useRouter } from 'next/navigation';
+import { Input } from "postcss";
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 30;
@@ -17,19 +19,25 @@ type Voice = {
     voiceURI?: string;
 };
 
-const initialPrompt = 'Eres un narrador de historias interactivas. El usuario es un detective y toma las decisiones. La trama es un crimen sin resolver. No uses tono conversacional. No hagas preguntas al usuario. Narra con crimen, miedo, intriga y realismo.Los criminales son inteligentes, manipuladores y evasivos.La historia tiene giros. Deja que el detective saque sus conclusiones sin resolver el caso.No tomes decisiones por el jugador, solo sugiérelas. Las víctimas tienen nombres.Las opciones deben ser realizables en la situación actual.Los criminales son peligrosos y no dejan testigos.La policía ignora advertencias sin pruebas, pero puede ayudar a encontrar más, la policia no resulve el caso. El investigador está en desventaja, no usa armas, y debe usar estrategia. Hay momentos en los que las opciones no permiten actuar (e.g., secuestrado). Advierte de situaciones peligrosas y permite evitarlas en las opciones. No introduzcas nuevos personajes en las opciones, solo en los resultados. La narrativa puede ser terrorífica; el investigador siente miedo y es vulnerable. El investigador no conoce a las víctimas ni a los personajes sin información previa. Describe escenarios con detalles vívidos pero breves. Introduce sospechosos o aliados secundarios. Muestra pistas sutilmente en la narración. Asegúrate de que cada opción avance la trama.'
+const initialPrompt = 'Al inicio de la historia me permetiras hablar con dos personajes. Maria o Juan '
+
+const initialStorytellerMessages: CoreMessage[] = [
+    { content: 'Antes de comenzar la historia te daré alguans instrucciones', role: "user" },
+    { content: 'Prestaré atencion a las intrucciones antes de entrar en mi rol como narrador', role: "assistant" },
+    { content: initialPrompt, role: "user" },
+    { content: 'Anotado ¿Estas Listo para empezar la historia?', role: "assistant" },
+    { content: 'Sí, entra en tu papel de narrador y no vuelvas a salir de ahi', role: "user" },
+]
 
 export default function StorytellerFlow() {
     const audioRef = useRef<HTMLAudioElement>(null);
     const [isAudioPlaying, setIsAudioPlaying] = useState(false);
-    const [messages, setMessages] = useState<CoreMessage[]>([
-        { content: 'Antes de comenzar la historia te daré alguans instrucciones', role: "user" },
-        { content: 'Prestaré atencion a las intrucciones antes de entrar en mi rol como narrador', role: "assistant" },
-        { content: initialPrompt, role: "user" },
-        { content: 'Anotado ¿Estas Listo para empezar la historia?', role: "assistant" },
-        { content: 'Sí, entra en tu papel de narrador y no vuelvas a salir de ahi', role: "user" },
-
-    ]);
+    const [messages, setMessages] = useState({
+        storyteller: initialStorytellerMessages,
+        maria: [] as CoreMessage[],
+        pedro: [] as CoreMessage[],
+    });
+    const [actualFlow, setActualFlow] = useState("storyteller");
     const [gameOver, setGameOver] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [formattedResponse, setformattedResponse] = useState({
@@ -38,9 +46,12 @@ export default function StorytellerFlow() {
         option2: '',
         option3: ''
     });
+
+    const [npcDialogue, setNpcDialogue] = useState('');
     const [speech, setSpeech] = useState<Speech | null>(null);
     const [voices, setVoices] = useState<Voice[]>([]);
     const [selectedVoice, setSelectedVoice] = useState<string>('');
+    const [inputValue, setInputValue] = useState<string>('');
     const router = useRouter();
 
     useEffect(() => {
@@ -118,8 +129,17 @@ export default function StorytellerFlow() {
         setIsLoading(true);
         console.log("opcion seleccionada: " + text);
         if (text !== "") {
-            const newMessages = [...messages, { role: 'user', content: text }];
-            setMessages(newMessages as CoreUserMessage[]);
+            const newStorytellerMessages = [
+                ...messages.storyteller,
+                { role: 'user', content: text } as CoreUserMessage
+            ];
+
+            const newMessages = {
+                ...messages,
+                storyteller: newStorytellerMessages
+            }
+
+            setMessages(newMessages);
 
             try {
                 const response = await fetch('/api/chat', {
@@ -133,15 +153,35 @@ export default function StorytellerFlow() {
                 });
 
                 const data = await response.json();
-                const textResponse = data.message.text;
-                const formattedResponse = data.formattedResponse;
-                setMessages(prevMessages => [...prevMessages, { role: 'assistant', content: textResponse }]);
-                setformattedResponse({
-                    paragraph: formattedResponse.paragraph,
-                    option1: formattedResponse.option_one,
-                    option2: formattedResponse.option_two,
-                    option3: formattedResponse.option_three,
-                });
+                const actualFlow = data.actualFlow;
+                if (actualFlow === "storyteller") {
+                    setActualFlow("storyteller");
+                    const textResponse = data.message.text;
+                    const formattedResponse = data.formattedResponse;
+                    setformattedResponse({
+                        paragraph: formattedResponse.paragraph,
+                        option1: formattedResponse.option_one,
+                        option2: formattedResponse.option_two,
+                        option3: formattedResponse.option_three,
+                    });
+                    const newStorytellerMessages = [
+                        ...messages.storyteller,
+                        { role: 'assistant', content: textResponse } as CoreAssistantMessage
+                    ];
+
+                    const newMessages = {
+                        ...messages,
+                        storyteller: newStorytellerMessages
+                    }
+                    setMessages(newMessages);
+                }
+                else {
+                    console.log("se está hablando con un npc")
+                    console.log(data);
+                    setActualFlow(data.actualFlow);
+                    setNpcDialogue(data.message);
+                }
+
             } catch (e) {
                 setformattedResponse({ ...formattedResponse, paragraph: "Fin del Juego" });
                 console.log(e);
@@ -174,11 +214,42 @@ export default function StorytellerFlow() {
         </div>
     );
 
+
+
     const Options = () => (
         <div className="flex flex-col gap-4 mt-12">
             {formattedResponse && <Option isLoading={isLoading} text={formattedResponse.option1} onClick={() => selectOption(formattedResponse.option1)} />}
             {formattedResponse && formattedResponse.option2 !== "" && <Option isLoading={isLoading} text={formattedResponse.option2} onClick={() => selectOption(formattedResponse.option2)} />}
             {formattedResponse && formattedResponse.option3 !== "" && <Option isLoading={isLoading} text={formattedResponse.option3} onClick={() => selectOption(formattedResponse.option3)} />}
+        </div>
+    )
+
+
+    const handleSendResponse = () => {
+        console.log(inputValue);
+        selectOption(inputValue);
+        setInputValue("");
+
+    };
+
+
+    const Input = () => (
+        <div className="bg-[#413A32] rounded-xl flex flex-row mt-12 justify-center items-center">
+            <input
+                type="text"
+                placeholder={`Escribe una respuesta para ${actualFlow}...`}
+                value={inputValue}
+                key="input"
+                onChange={e => setInputValue(e.target.value)}
+                className="p-4 bg-[#413A32] rounded-xl w-full focus:outline-none"
+            />
+            <button
+                disabled={isLoading}
+                className="cursor-pointer p-2 mr-4"
+                onClick={handleSendResponse}
+            >
+                <IoSendSharp size={24} />
+            </button>
         </div>
     )
 
@@ -190,7 +261,8 @@ export default function StorytellerFlow() {
             </audio>
             <div className="h-full flex flex-col justify-center text-gray-300 px-4 sm:px-36 max-w-[50rem] mx-auto">
                 <h1 className="hidden 2xl:block text-2xl font-bold mb-12">{gameOver ? 'Fin del juego' : 'Criminologia Procedural'}</h1>
-                <p>{formattedResponse && formattedResponse.paragraph}</p>
+                <h1 className="font-bold">{actualFlow !== "storyteller" && actualFlow.toUpperCase() + " :"}</h1>
+                <p>{actualFlow === "storyteller" ? formattedResponse && formattedResponse.paragraph : npcDialogue}</p>
                 <VoiceSelector />
                 <Image
                     src="/separador.webp"
@@ -200,7 +272,10 @@ export default function StorytellerFlow() {
                     className="xl:max-w-2/4"
                     priority
                 />
-                <Options />
+                {actualFlow === "storyteller" ? <Options /> : <Input />}
+                
+                <Input />
+
             </div>
         </div>
     );
