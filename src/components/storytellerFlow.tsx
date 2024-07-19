@@ -233,25 +233,25 @@ export default function StorytellerFlow() {
     };
 
 
-    const Input = () => (
-        <div className="bg-[#413A32] rounded-xl flex flex-row mt-12 justify-center items-center">
-            <input
-                type="text"
-                placeholder={`Escribe una respuesta para ${actualFlow}...`}
-                value={inputValue}
-                key="input"
-                onChange={e => setInputValue(e.target.value)}
-                className="p-4 bg-[#413A32] rounded-xl w-full focus:outline-none"
-            />
-            <button
-                disabled={isLoading}
-                className="cursor-pointer p-2 mr-4"
-                onClick={handleSendResponse}
-            >
-                <IoSendSharp size={24} />
-            </button>
-        </div>
-    )
+    // const Input = () => (
+    //     <div className="bg-[#413A32] rounded-xl flex flex-row mt-12 justify-center items-center">
+    //         <input
+    //             type="text"
+    //             placeholder={`Escribe una respuesta para ${actualFlow}...`}
+    //             value={inputValue}
+    //             key="input"
+    //             onChange={e => setInputValue(e.target.value)}
+    //             className="p-4 bg-[#413A32] rounded-xl w-full focus:outline-none"
+    //         />
+    //         <button
+    //             disabled={isLoading}
+    //             className="cursor-pointer p-2 mr-4"
+    //             onClick={handleSendResponse}
+    //         >
+    //             <IoSendSharp size={24} />
+    //         </button>
+    //     </div>
+    // )
 
     return (
         <div className="xl:w-2/4 w-screen min-h-screen md:bg-contain bg-center bg-no-repeat" style={{ backgroundImage: "url('/fondoPrincipal.webp')" }}>
@@ -272,9 +272,25 @@ export default function StorytellerFlow() {
                     className="xl:max-w-2/4"
                     priority
                 />
-                {actualFlow === "storyteller" ? <Options /> : <Input />}
-                
-                <Input />
+                {actualFlow === "storyteller" ? <Options /> :
+                    <div className="bg-[#413A32] rounded-xl flex flex-row mt-12 justify-center items-center">
+                        <input
+                            type="text"
+                            placeholder={`Escribe una respuesta para ${actualFlow}...`}
+                            value={inputValue}
+                            key="input"
+                            onChange={e => setInputValue(e.target.value)}
+                            className="p-4 bg-[#413A32] rounded-xl w-full focus:outline-none"
+                        />
+                        <button
+                            disabled={isLoading}
+                            className="cursor-pointer p-2 mr-4"
+                            onClick={handleSendResponse}
+                        >
+                            <IoSendSharp size={24} />
+                        </button>
+                    </div>
+                }
 
             </div>
         </div>
