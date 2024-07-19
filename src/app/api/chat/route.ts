@@ -59,26 +59,31 @@ export async function POST(req: Request) {
       },
       //maxTokens: 400,
     });
-    console.log(`Chat API's result: ${result}`);
+    //console.log(`Chat API's result: ${JSON.stringify(result)}`);
 
-
-    if (npcResponse != "") {
-      console.log(`Chat API's npcResponse: ${npcResponse}`);
-      return NextResponse.json({ message: npcResponse, currentAgent }, { status: 200 });
-    }
-
+    //Fin del juego
     if (gameOver) {
       console.log("Game over");
       return NextResponse.json({ error: 'El juego ha terminado' }, { status: 400 });
     }
-    if (result.text != "") {
+
+    //El mensaje de respuesta es del storyteller
+    if (currentAgent === "storyteller" && result.text != "") {
       const resultTextFormated = await textToJson(result.text);
       //Remplazamos el texto por el JSON
       //const resultFormated = { ...result, text: resultTextFormated.notification }
       console.log(`Chat API's result.text: ${result.text}`);
       console.log(`Chat API's resultTextFormated: ${JSON.stringify(resultTextFormated)}`);
-      return NextResponse.json({ message: result, formattedResponse: resultTextFormated, currentAgent }, { status: 200 });
+      return NextResponse.json({ agentResponse: result.text, formattedResponse: resultTextFormated, currentAgent }, { status: 200 });
     }
+
+    //El mensaje de respuesta es de un NPC
+    if (currentAgent !== "storyteller" && npcResponse != "") {
+      console.log(`Chat API's npcResponse: ${npcResponse}`);
+      return NextResponse.json({ agentResponse: npcResponse, formattedResponse: {paragraph: npcResponse, option1: "", option2: "", option3: ""}, currentAgent }, { status: 200 });
+    }
+
+    //El mensaje de respuesta es vacío
     else {
       console.log(`Chat API's result.text: ${result.text}`);
       return NextResponse.json({ error: 'El texto de retorno está vacio' }, { status: 400 });
@@ -96,14 +101,14 @@ async function textToJson(text: string) {
 
   const { object } = await generateObject({
     model: openai('gpt-3.5-turbo'),
-    system: `Transformas texto a formato JSON. siguiendo el esquema: paragraph, option_one, option_two, option_three. No modifiques el texto.`,
+    system: `Transformas texto a formato JSON. siguiendo el esquema: paragraph, option1, option2, option3. No modifiques el texto.`,
     prompt: text,
     maxTokens: 200,
     schema: z.object({
       "paragraph": z.string().describe('Parrafo principal'),
-      "option_one": z.string().describe('Primera opción posible.'),
-      "option_two": z.string().describe('Segunda opción posible.'),
-      "option_three": z.string().describe('Tercera opción posible.'),
+      "option1": z.string().describe('Primera opción posible.'),
+      "option2": z.string().describe('Segunda opción posible.'),
+      "option3": z.string().describe('Tercera opción posible.'),
     }),
   });
 

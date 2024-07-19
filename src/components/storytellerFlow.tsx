@@ -7,6 +7,7 @@ import Option from "./option";
 import { CoreAssistantMessage, CoreMessage, CoreSystemMessage, CoreUserMessage } from "ai";
 import Endgame from "./endgame";
 import { resumeStory } from "@/app/actions";
+import { fetchOpenAI } from "@/app/utils";
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 30;
@@ -70,7 +71,7 @@ export default function StorytellerFlow() {
     const [npcDialogue, setNpcDialogue] = useState('');
     const [speech, setSpeech] = useState<Speech | null>(null);
     const [voices, setVoices] = useState<Voice[]>([]);
-    const [selectedVoice, setSelectedVoice] = useState<string>('');
+    const [selectedVoice, setSelectedVoice] = useState<string>('Google español');
     const [inputValue, setInputValue] = useState<string>('');
     const [storySummary, setStorySummary] = useState<string>('')
 
@@ -172,30 +173,22 @@ export default function StorytellerFlow() {
             }
 
             try {
-                const response = await fetch('/api/chat', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        messages: newMessages1,
-                    }),
-                });
 
-                const data = await response.json();
+                const data = await fetchOpenAI(newMessages1);
+                console.log(data)
                 const newCurrentAgent: "storyteller" | "maria" | "pedro" = data.currentAgent;
                 if (!newCurrentAgent) {
                     //devolver error
                     throw new Error("El servidor devolvio 400, currentAgent no existe");
                 }
                 if (newCurrentAgent === "storyteller") {
-                    const textResponse = data.message.text;
+                    const textResponse = data.agentResponse;
                     const formattedResponse = data.formattedResponse;
                     setformattedResponse({
                         paragraph: formattedResponse.paragraph,
-                        option1: formattedResponse.option_one,
-                        option2: formattedResponse.option_two,
-                        option3: formattedResponse.option_three,
+                        option1: formattedResponse.option1,
+                        option2: formattedResponse.option2,
+                        option3: formattedResponse.option3,
                     });
                     const newStorytellerMessages = [
                         ...newMessages1.storyteller,
@@ -214,7 +207,7 @@ export default function StorytellerFlow() {
                     console.log(newCurrentAgent);
                     const newAgentMessages = [
                         ...messages[newCurrentAgent],
-                        { role: 'assistant', content: data.message } as CoreAssistantMessage
+                        { role: 'assistant', content: data.agentResponse } as CoreAssistantMessage
                     ];
 
                     const newStorytellerMessages = [
@@ -230,7 +223,7 @@ export default function StorytellerFlow() {
                     }
 
                     setMessages(newMessages);
-                    setNpcDialogue(data.message);
+                    setNpcDialogue(data.agentResponse);
 
                 }
                 setCurrentAgent(data.currentAgent)
@@ -296,24 +289,15 @@ export default function StorytellerFlow() {
             setMessages(newMessages);
 
             try {
-                const response = await fetch('/api/chat', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        messages: newMessages,
-                    }),
-                });
+                const data = await fetchOpenAI(newMessages);
 
-                const data = await response.json();
                 console.log(data);
                 const newCurrentAgent: "storyteller" | "maria" | "pedro" = data.currentAgent;
                 if (currentAgent) {
                     const newAgentMessages = [
                         ...messages[newCurrentAgent],
                         { role: 'user', content: inputValue } as CoreUserMessage,
-                        { role: 'assistant', content: data.message } as CoreAssistantMessage
+                        { role: 'assistant', content: data.agentResponse } as CoreAssistantMessage
                     ];
 
                     const newMessages = {
@@ -322,7 +306,7 @@ export default function StorytellerFlow() {
                     }
 
                     setMessages(newMessages);;
-                    setNpcDialogue(data.message);
+                    setNpcDialogue(data.agentResponse);
                 }
                 else {
                     console.log("Error del servidor")
