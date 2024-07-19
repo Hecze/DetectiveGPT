@@ -50,10 +50,15 @@ const initialStorytellerMessages: CoreMessage[] = [
 
 // Cuando el jugador resuelve el crimen debes responder con el desenlace de la historia`
 
+interface AgentContextManager {
+    storyteller: CoreMessage[];
+    [key: string]: CoreMessage[];
+}
+
 export default function StorytellerFlow() {
     const audioRef = useRef<HTMLAudioElement>(null);
     const [isAudioPlaying, setIsAudioPlaying] = useState(false);
-    const [agentContextManager, setAgentContextManager] = useState({
+    const [agentContextManager, setAgentContextManager] = useState<AgentContextManager>({
         storyteller: initialStorytellerMessages,
         maria: [] as CoreMessage[],
         pedro: [] as CoreMessage[],
@@ -135,6 +140,73 @@ export default function StorytellerFlow() {
         }
     }, [selectedVoice]);
 
+
+    const selectOption = async (text: string) => {
+        if (audioRef && audioRef.current) {
+            audioRef.current.play();
+            audioRef.current.volume = 0.04;
+        }
+
+        setIsAudioPlaying(true);
+        setIsLoading(true);
+        console.log("opcion seleccionada: " + text);
+
+        if (text === "") {
+            setIsLoading(false);
+            return; // Salir si text está vacío
+        }
+        
+        try {
+            // Agregar el mensaje del usuario al contexto del agente actual
+            const updatedContext: AgentContextManager = addMessageToContext({
+                context: agentContextManager,
+                agent: currentAgent,
+                content: text,
+                role: 'user'
+            });
+
+            // Obtener la respuesta del asistente
+            const { currentAgent: nextAgent, formattedResponse, agentResponse } = await fetchOpenAI(updatedContext);
+
+            console.log("Le hablamos al agente: " + currentAgent);
+            console.log("Nos responde el agente: " + nextAgent);
+
+            // Agregar la respuesta del asistente al contexto del nuevo agente
+            const finalContext: AgentContextManager = addMessageToContext({
+                context: updatedContext,
+                agent: nextAgent,
+                content: agentResponse,
+                role: 'assistant'
+            });
+
+            // Actualizar estados
+            setformattedResponse(formattedResponse);
+            setAgentContextManager(finalContext);
+            setNpcDialogue(agentResponse);
+            setCurrentAgent(nextAgent);
+
+        } catch (error) {
+            setformattedResponse({ paragraph: "Fin del Juego", option1: "", option2: "", option3: "" });
+            console.error(error);
+            setStorySummary(await createStorySummary());
+            setGameOver(true);
+        }
+
+        setIsLoading(false);
+    };
+
+    // Función para agregar un mensaje al contexto de un agente
+    interface AddMessageParams {
+        context: AgentContextManager;
+        agent: keyof AgentContextManager;
+        content: string;
+        role: 'user' | 'assistant';
+    }
+
+    const addMessageToContext = ({ context, agent, content, role }: AddMessageParams): AgentContextManager => ({
+        ...context,
+        [agent]: [...(context[agent] || []), { role, content }]
+    });
     const createStorySummary = async () => {
         const initialValue = '';
         const sumWithInitial = agentContextManager.storyteller.reduce(
@@ -152,68 +224,6 @@ export default function StorytellerFlow() {
         setSelectedVoice(voiceName);
     };
 
-    const selectOption = async (text: string) => {
-        if (audioRef && audioRef.current) {
-            audioRef.current.play();
-            audioRef.current.volume = 0.04;
-        }
-        // setStorySummary(await createStorySummary())
-        setIsAudioPlaying(true);
-        setIsLoading(true);
-        console.log("opcion seleccionada: " + text);
-        if (text !== "") {
-            //Nuestra respuesta debe almacenarse en el ultimo agente, al que respondimos.                  
-            const lastAgentMessages = [
-                ...agentContextManager[currentAgent],
-                { role: 'user', content: text } as CoreUserMessage
-            ];
-
-            const newAgentsMessages = {
-                ...agentContextManager,
-                [currentAgent]: lastAgentMessages,
-            }
-
-            try {
-
-                const data = await fetchOpenAI(newAgentsMessages);
-                console.log(data)
-                const newCurrentAgent: "storyteller" | "maria" | "pedro" = data.currentAgent;
-                console.log("Le hablamos al agente: " + currentAgent);
-                console.log("Nos responde el agente: " + newCurrentAgent)
-                const formattedResponse = data.formattedResponse;
-                setformattedResponse(formattedResponse);
-
-                //Nuestra respuesta debe almacenarse en el ultimo agente, al que respondimos, no en el agente actual                     
-                const lastAgentMessages = [
-                    ...agentContextManager[currentAgent],
-                    { role: 'user', content: text } as CoreUserMessage
-                ];
-
-                //El mensaje del agente debe almacenarse en el agente actual   
-                const newAgentMessages = [
-                    ...agentContextManager[newCurrentAgent],
-                    { role: 'assistant', content: data.agentResponse } as CoreAssistantMessage
-                ];
-
-                const newMessages = {
-                    ...agentContextManager,
-                    [currentAgent]: lastAgentMessages,
-                    [newCurrentAgent]: newAgentMessages
-                }
-
-                setAgentContextManager(newMessages);
-                setNpcDialogue(data.agentResponse);
-                setCurrentAgent(data.currentAgent)
-
-            } catch (e) {
-                setformattedResponse({ ...formattedResponse, paragraph: "Fin del Juego" });
-                console.log(e);
-                setStorySummary(await createStorySummary())
-                setGameOver(true)
-            }
-        }
-        setIsLoading(false);
-    };
 
     const VoiceSelector = () => (
         <div className="hidden xl:block">
@@ -237,7 +247,6 @@ export default function StorytellerFlow() {
     );
 
 
-
     const Options = () => (
         <div className="flex flex-col gap-4 mt-12">
             {formattedResponse && <Option isLoading={isLoading} text={formattedResponse.option1} onClick={() => selectOption(formattedResponse.option1)} />}
@@ -255,7 +264,7 @@ export default function StorytellerFlow() {
         if (inputValue !== "") {
             const newAgentMessages = [
                 ...agentContextManager[currentAgent],
-                { role: 'user', content: inputValue } as CoreUserMessage
+                { role: 'user', content: inputValue } as CoreMessage
             ];
 
             const newMessages = {
@@ -273,8 +282,8 @@ export default function StorytellerFlow() {
                 if (currentAgent) {
                     const newAgentMessages = [
                         ...agentContextManager[newCurrentAgent],
-                        { role: 'user', content: inputValue } as CoreUserMessage,
-                        { role: 'assistant', content: data.agentResponse } as CoreAssistantMessage
+                        { role: 'user', content: inputValue } as CoreMessage,
+                        { role: 'assistant', content: data.agentResponse } as CoreMessage
                     ];
 
                     const newMessages = {
