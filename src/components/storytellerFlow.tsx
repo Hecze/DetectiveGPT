@@ -141,7 +141,7 @@ export default function StorytellerFlow() {
     }, [selectedVoice]);
 
 
-    const selectOption = async (text: string) => {
+    const sendUserMessage = async (userMessage: string) => {
         if (audioRef && audioRef.current) {
             audioRef.current.play();
             audioRef.current.volume = 0.04;
@@ -149,19 +149,19 @@ export default function StorytellerFlow() {
 
         setIsAudioPlaying(true);
         setIsLoading(true);
-        console.log("opcion seleccionada: " + text);
 
-        if (text === "") {
+        if (userMessage === "") {
             setIsLoading(false);
             return; // Salir si text está vacío
         }
-        
+
+        setInputValue("");
         try {
             // Agregar el mensaje del usuario al contexto del agente actual
             const updatedContext: AgentContextManager = addMessageToContext({
                 context: agentContextManager,
                 agent: currentAgent,
-                content: text,
+                content: userMessage,
                 role: 'user'
             });
 
@@ -191,7 +191,7 @@ export default function StorytellerFlow() {
             setStorySummary(await createStorySummary());
             setGameOver(true);
         }
-
+        
         setIsLoading(false);
     };
 
@@ -246,86 +246,13 @@ export default function StorytellerFlow() {
         </div>
     );
 
-
     const Options = () => (
         <div className="flex flex-col gap-4 mt-12">
-            {formattedResponse && <Option isLoading={isLoading} text={formattedResponse.option1} onClick={() => selectOption(formattedResponse.option1)} />}
-            {formattedResponse && formattedResponse.option2 !== "" && <Option isLoading={isLoading} text={formattedResponse.option2} onClick={() => selectOption(formattedResponse.option2)} />}
-            {formattedResponse && formattedResponse.option3 !== "" && <Option isLoading={isLoading} text={formattedResponse.option3} onClick={() => selectOption(formattedResponse.option3)} />}
+            {formattedResponse && <Option isLoading={isLoading} text={formattedResponse.option1} onClick={() => sendUserMessage(formattedResponse.option1)} />}
+            {formattedResponse && formattedResponse.option2 !== "" && <Option isLoading={isLoading} text={formattedResponse.option2} onClick={() => sendUserMessage(formattedResponse.option2)} />}
+            {formattedResponse && formattedResponse.option3 !== "" && <Option isLoading={isLoading} text={formattedResponse.option3} onClick={() => sendUserMessage(formattedResponse.option3)} />}
         </div>
     )
-
-
-    const handleSendResponse = async () => {
-        console.log(inputValue);
-        setInputValue("");
-        console.log(currentAgent);
-
-        if (inputValue !== "") {
-            const newAgentMessages = [
-                ...agentContextManager[currentAgent],
-                { role: 'user', content: inputValue } as CoreMessage
-            ];
-
-            const newMessages = {
-                ...agentContextManager,
-                [currentAgent]: newAgentMessages
-            }
-
-            setAgentContextManager(newMessages);
-
-            try {
-                const data = await fetchOpenAI(newMessages);
-
-                console.log(data);
-                const newCurrentAgent: "storyteller" | "maria" | "pedro" = data.currentAgent;
-                if (currentAgent) {
-                    const newAgentMessages = [
-                        ...agentContextManager[newCurrentAgent],
-                        { role: 'user', content: inputValue } as CoreMessage,
-                        { role: 'assistant', content: data.agentResponse } as CoreMessage
-                    ];
-
-                    const newMessages = {
-                        ...agentContextManager,
-                        [newCurrentAgent]: newAgentMessages
-                    }
-
-                    setAgentContextManager(newMessages);;
-                    setNpcDialogue(data.agentResponse);
-                }
-                else {
-                    console.log("Error del servidor")
-                }
-
-            } catch (e) {
-                console.log(e);
-            }
-        }
-
-
-    };
-
-
-    // const Input = () => (
-    //     <div className="bg-[#413A32] rounded-xl flex flex-row mt-12 justify-center items-center">
-    //         <input
-    //             type="text"
-    //             placeholder={`Escribe una respuesta para ${currentAgent}...`}
-    //             value={inputValue}
-    //             key="input"
-    //             onChange={e => setInputValue(e.target.value)}
-    //             className="p-4 bg-[#413A32] rounded-xl w-full focus:outline-none"
-    //         />
-    //         <button
-    //             disabled={isLoading}
-    //             className="cursor-pointer p-2 mr-4"
-    //             onClick={handleSendResponse}
-    //         >
-    //             <IoSendSharp size={24} />
-    //         </button>
-    //     </div>
-    // )
 
     return (
         <>
@@ -361,7 +288,7 @@ export default function StorytellerFlow() {
                                 <button
                                     disabled={isLoading}
                                     className="cursor-pointer p-2 mr-4"
-                                    onClick={handleSendResponse}
+                                    onClick={() => sendUserMessage(inputValue)}
                                 >
                                     <IoSendSharp size={24} />
                                 </button>
