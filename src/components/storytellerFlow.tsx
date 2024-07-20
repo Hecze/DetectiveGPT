@@ -20,7 +20,7 @@ type Voice = {
     voiceURI?: string;
 };
 
-const initialPrompt = 'Al inicio de la historia me permetiras hablar con dos personajes. Maria o Pedro'
+const initialPrompt = 'Hay Dos personajes muy importantes de tu historia son juan o Pedro. me permitiras hablar con ellos al principio.'
 
 const initialStorytellerMessages: CoreMessage[] = [
     { content: 'Antes de comenzar la historia te daré alguans instrucciones', role: "user" },
@@ -60,10 +60,10 @@ export default function StorytellerFlow() {
     const [isAudioPlaying, setIsAudioPlaying] = useState(false);
     const [agentContextManager, setAgentContextManager] = useState<AgentContextManager>({
         storyteller: initialStorytellerMessages,
-        maria: [] as CoreMessage[],
+        juan: [] as CoreMessage[],
         pedro: [] as CoreMessage[],
     });
-    const [currentAgent, setCurrentAgent] = useState<"storyteller" | "maria" | "pedro">("storyteller");
+    const [currentAgent, setCurrentAgent] = useState<"storyteller" | "juan" | "pedro">("storyteller");
     const [gameOver, setGameOver] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [assitantResponse, setAssitantResponse] = useState('');
@@ -166,10 +166,12 @@ export default function StorytellerFlow() {
             });
 
             // Obtener la respuesta del asistente
-            const { currentAgent: nextAgent, formattedResponse, agentResponse } = await fetchOpenAI(updatedContext);
+            let { currentAgent: nextAgent, formattedResponse, agentResponse } = await fetchOpenAI(updatedContext);
 
             console.log("Le hablamos al agente: " + currentAgent);
             console.log("Nos responde el agente: " + nextAgent);
+            console.log("La respuesta del agente es: " + agentResponse);
+
 
             // Agregar la respuesta del asistente al contexto del nuevo agente
             const finalContext: AgentContextManager = addMessageToContext({
@@ -178,16 +180,17 @@ export default function StorytellerFlow() {
                 content: agentResponse,
                 role: 'assistant'
             });
-
+ 
             // Actualizar estados
             setformattedResponse(formattedResponse);
+            console.log(finalContext);
             setAgentContextManager(finalContext);
             setAssitantResponse(agentResponse);
             setCurrentAgent(nextAgent);
 
         } catch (error) {
             setformattedResponse({ paragraph: "Fin del Juego", option1: "", option2: "", option3: "" });
-            console.error(error);
+            console.log(error);
             setStorySummary(await createStorySummary());
             setGameOver(true);
         }

@@ -17,7 +17,7 @@ const formattedResponseSchema = z.object({
 
 const openaiResponseSchema = z.object({
     agentResponse: z.string(),
-    currentAgent: z.enum(["storyteller", "maria", "pedro"]),
+    currentAgent: z.enum(["storyteller", "juan", "pedro"]),
     formattedResponse: formattedResponseSchema,
 });
 
@@ -30,7 +30,7 @@ type OpenaiResponse = z.infer<typeof openaiResponseSchema>;
  *   Example:
  *   {
  *     storyteller: [{...}, {...}],
- *     maria: [{...}, {...}],
+ *     juan: [{...}, {...}],
  *     pedro: [{...}, {...}]
  *   }
  * 

@@ -6,11 +6,16 @@ import { NextResponse } from 'next/server';
 // Allow streaming responses up to 30 seconds
 export const maxDuration = 60;
 
+interface AgentResponse {
+  name: string;
+  message: string;
+}
+
 export async function POST(req: Request) {
 
-  let currentAgent: "storyteller" | "maria" | "pedro" = "storyteller";
+  let currentAgent = "storyteller";
+  let messageAgent = "";
   let gameOver = false;
-  let npcResponse = "";
 
   try {
     const { messages } = await req.json();
@@ -20,40 +25,43 @@ export async function POST(req: Request) {
       // model: openai('gpt-4-turbo'), // $5.00 x millon de requests
       model: openai('gpt-3.5-turbo'), // $0.50 x millon de requests
       system: `Máximo 300 caracteres. Eres un narrador de historias interactivas. Al final de cada respuesta, añade 3 opciones cortas realizables en la situación actual. Los personajes tienen nombres. No utilices juicios de valor. Casi no hay registros de los criminales; solo se conocen rumores. Habla siempre en segunda persona dirigíendote a mí, es decir, el juegador o el usuario.
-      parrafo de la historia. parrafo de la historia: por ejemplo "te encuentras con tu amiga maria",
-      opcion 1: hablar con maria,
+      parrafo de la historia. parrafo de la historia: por ejemplo "te encuentras con tu amigo juan",
+      opcion 1: hablar con juan,
       opcion 2: hablar con pedro
       opcion 3: ...,
       `,
       messages: messages.storyteller,
       tools: {
-        gameOver: tool({
-          //Cuando llamar a la tool
-          description: 'Se ejecuta cuando el jugador resuelve el crimen',
-          parameters: z.object({}),
-          //Funcion que se ejecuta cuando se llama a la tool
-          execute: async () => {
-            console.log("Game over");
-            gameOver = true;
-            return {};
-          }
-        }),
+        // investigatorIsDead: tool({
+        //   //Cuando llamar a la tool
+        //   description: 'Se ejecuta cuando el investigador muere',
+        //   parameters: z.object({reasonOfDead: z.string().describe('Razón de la muerte')}),
+        //   //Funcion que se ejecuta cuando se llama a la tool
+        //   execute: async ({ reasonOfDead }) => {
+        //     console.log("Game over");
+        //     console.log("Razón de la muerte: " + reasonOfDead );
+        //     gameOver = true;
+        //     messageAgent = "Razón de la muerte: " + reasonOfDead ;
+        //     return {};
+        //   }
+        // }),
 
         speakWithNpc: tool({
           //Cuando llamar a la tool
-          description: 'Se ejecuta cuando el jugador empieza a hablar con un npc',
+          description: 'El jugador desea hablar con un personaje especifico',
           parameters: z.object({
-            name: z.string().describe('El nombre del personaje. Puede ser maria o pedro'),
+            name: z.string().describe('El nombre del personaje. Puede ser juan o pedro'),
             prompt: z.string().describe('Mensaje para el personaje. por ejemplo: "eres Pedro, una chico implicado en un crimen"'),
           }),
           //Funcion que se ejecuta cuando se llama a la tool
           execute: async ({ name, prompt }) => {
             console.log("speakingWithNpc");
             console.log("name: " + name, "\nprompt: " + prompt);
-            currentAgent = name.toLowerCase() as "maria" | "pedro";
-            const response = await speakWithNpc(name, prompt, messages[currentAgent] as CoreMessage[]);
-            npcResponse = response;
-            console.log("Respuesta del npc : " + response);
+            const agentResponse: AgentResponse = await speakWithNpc(name, prompt, messages[name.toLowerCase()] as CoreMessage[]);
+            currentAgent = agentResponse.name;
+            messageAgent = agentResponse.message;
+            console.log("Nombre del npc : " + agentResponse.name);
+            console.log("Respuesta del npc : " + agentResponse.message);
           }
         }),
       },
@@ -64,23 +72,40 @@ export async function POST(req: Request) {
     //Fin del juego
     if (gameOver) {
       console.log("Game over");
-      return NextResponse.json({ error: 'El juego ha terminado' }, { status: 400 });
+      return NextResponse.json({ agentResponse: messageAgent, formattedResponse: { paragraph: messageAgent, option1: "", option2: "", option3: "" }, currentAgent: "storyteller" }, { status: 200 });
     }
 
     //El mensaje de respuesta es del storyteller
-    if (currentAgent === "storyteller" && result.text != "") {
-      const resultTextFormated = await textToJson(result.text);
+    if (currentAgent === "storyteller") {
+
+      let textToReturn = "";
+      let resultTextFormated = { paragraph: messageAgent, option1: "Continuar investigando", option2: "Informar a la policia", option3: "" };
+
+      if (messageAgent !== "") {
+        //El mensaje de respuesta es de un NPC que le está pasando el flujo al storyteller
+        textToReturn = messageAgent;
+        console.log(`Chat API's textToReturn: ${textToReturn}`);
+      } else {
+        //El mensaje de respuesta es del storyteller
+        textToReturn = result.text;
+        console.log(`Chat API's textToReturn: ${textToReturn}`);
+        resultTextFormated = await textToJson(textToReturn);
+
+      }
+
+      console.log(resultTextFormated)
+
       //Remplazamos el texto por el JSON
       //const resultFormated = { ...result, text: resultTextFormated.notification }
-      console.log(`Chat API's result.text: ${result.text}`);
+      console.log(`Chat API's result.text: ${textToReturn}`);
       console.log(`Chat API's resultTextFormated: ${JSON.stringify(resultTextFormated)}`);
-      return NextResponse.json({ agentResponse: result.text, formattedResponse: resultTextFormated, currentAgent }, { status: 200 });
+      return NextResponse.json({ agentResponse: textToReturn, formattedResponse: resultTextFormated, currentAgent }, { status: 200 });
     }
 
     //El mensaje de respuesta es de un NPC
-    if (currentAgent !== "storyteller" && npcResponse != "") {
-      console.log(`Chat API's npcResponse: ${npcResponse}`);
-      return NextResponse.json({ agentResponse: npcResponse, formattedResponse: {paragraph: npcResponse, option1: "", option2: "", option3: ""}, currentAgent }, { status: 200 });
+    if (currentAgent !== "storyteller" && messageAgent != "") {
+      console.log(`Chat API's messageAgent: ${messageAgent}`);
+      return NextResponse.json({ agentResponse: messageAgent, formattedResponse: { paragraph: messageAgent, option1: "", option2: "", option3: "" }, currentAgent }, { status: 200 });
     }
 
     //El mensaje de respuesta es vacío
@@ -91,7 +116,7 @@ export async function POST(req: Request) {
 
     // Retornar una respuesta JSON válida
   } catch (error) {
-    console.error(error);
+    console.log(error);
     return NextResponse.json({ error: 'Error procesando la solicitud' }, { status: 400 });
   }
 }
@@ -101,7 +126,7 @@ async function textToJson(text: string) {
 
   const { object } = await generateObject({
     model: openai('gpt-3.5-turbo'),
-    system: `Transformas texto a formato JSON. siguiendo el esquema: paragraph, option1, option2, option3. No modifiques el texto.`,
+    system: `Transformas texto a formato JSON. siguiendo el esquema: paragraph, option1, option2, option3. No modifiques el contenido.`,
     prompt: text,
     maxTokens: 200,
     schema: z.object({
@@ -119,27 +144,42 @@ async function textToJson(text: string) {
 async function speakWithNpc(name: string, prompt: string, messages: CoreMessage[]) {
   'use server';
   console.log("name: " + name, "\nprompt: " + prompt, "\nmessages: " + JSON.stringify(messages));
+  let currentAgent: "juan" | "pedro" | "storyteller" = name.toLowerCase() as "juan" | "pedro" | "storyteller";
+  let currentMessage = "";
+  let resumeOfAllConversation = "";
 
   const result = await generateText({
     model: openai('gpt-3.5-turbo'),
-    system: `Maximo 150 caracteres. Eres un personaje en una novela de misterio. Tu nombre es ${name}. Habla en primera persona, con respuestas cortas. No eres el investigador. El investigador te entrevistara para encontrar pruebas`,
+    system: `Maximo 150 caracteres. Eres un personaje en una novela de misterio. Tu nombre es ${name}. Habla en primera persona, con respuestas cortas. No eres el investigador. El investigador te entrevistara para encontrar pruebas. Tienes informacion util para el desemvolvimiento de la trama`,
     messages: messages,
     maxTokens: 200,
-    // tools: {
-    //   endFlow: tool({
-    //     //Cuando llamar a la tool
-    //     description: 'Se ejecuta cuando se termina la conversacion con el personaje',
-    //     parameters: z.object({ resume: z.string().describe('Resumen de la conversacion') }),
-    //     //Funcion que se ejecuta cuando se llama a la tool
-    //     execute: async ({ resume }) => {
-    //       console.log("Resumen: " + resume);
-    //       return resume;
-    //     }
-    //   })
-    // }
+    tools: {
+      endFlow: tool({
+        //Cuando llamar a la tool
+        description: 'Se ejecuta cuando el investigador se despide de ' + name,
+        parameters: z.object({ resume: z.string().describe('Resumen detallado de la informacion recaudada') }),
+        //Funcion que se ejecuta cuando se llama a la tool
+        execute: async ({ resume }) => {
+          console.log("Anotas todo lo conversado con " + name + " en tu libreta: " + resume);
+          currentAgent = "storyteller";
+          //mensaje que se le pasará al storyteller
+          resumeOfAllConversation = resume;
+          return
+        }
+      })
+    }
   });
 
-  return result.text;
+  if (currentAgent !== "storyteller") {
+    currentMessage = result.text;
+  }
+  else {
+    console.log("Se ha terminado la conversación con " + name + ". El resumen es: " + resumeOfAllConversation);
+    currentMessage = `Anotas todo lo conversado con ${name} en tu libreta: ${resumeOfAllConversation} \n `;
+  }
+
+  const agentResponse: AgentResponse = { name: currentAgent, message: currentMessage }
+  return agentResponse;
 }
 
 
