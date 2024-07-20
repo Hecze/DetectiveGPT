@@ -6,8 +6,7 @@ import { IoSendSharp } from "react-icons/io5";
 import Option from "./option";
 import { CoreAssistantMessage, CoreMessage, CoreSystemMessage, CoreUserMessage } from "ai";
 import Endgame from "./endgame";
-import { resumeStory } from "@/app/actions";
-import { fetchOpenAI } from "@/app/utils";
+import { getAgentReply, createStorySummary } from "@/utils/agentContextManager";
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 30;
@@ -58,11 +57,6 @@ interface AgentContextManager {
 export default function StorytellerFlow() {
     const audioRef = useRef<HTMLAudioElement>(null);
     const [isAudioPlaying, setIsAudioPlaying] = useState(false);
-    const [agentContextManager, setAgentContextManager] = useState<AgentContextManager>({
-        storyteller: initialStorytellerMessages,
-        juan: [] as CoreMessage[],
-        pedro: [] as CoreMessage[],
-    });
     const [currentAgent, setCurrentAgent] = useState<"storyteller" | "juan" | "pedro">("storyteller");
     const [gameOver, setGameOver] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
@@ -157,34 +151,15 @@ export default function StorytellerFlow() {
 
         setInputValue("");
         try {
-            // Agregar el mensaje del usuario al contexto del agente actual
-            const updatedContext: AgentContextManager = addMessageToContext({
-                context: agentContextManager,
-                agent: currentAgent,
-                content: userMessage,
-                role: 'user'
-            });
-
             // Obtener la respuesta del asistente
-            let { currentAgent: nextAgent, formattedResponse, agentResponse } = await fetchOpenAI(updatedContext);
+            let { currentAgent: nextAgent, formattedResponse, agentResponse } = await getAgentReply({agent: currentAgent, content: userMessage});
 
             console.log("Le hablamos al agente: " + currentAgent);
             console.log("Nos responde el agente: " + nextAgent);
             console.log("La respuesta del agente es: " + agentResponse);
 
-
-            // Agregar la respuesta del asistente al contexto del nuevo agente
-            const finalContext: AgentContextManager = addMessageToContext({
-                context: updatedContext,
-                agent: nextAgent,
-                content: agentResponse,
-                role: 'assistant'
-            });
- 
             // Actualizar estados
             setformattedResponse(formattedResponse);
-            console.log(finalContext);
-            setAgentContextManager(finalContext);
             setAssitantResponse(agentResponse);
             setCurrentAgent(nextAgent);
 
@@ -199,27 +174,7 @@ export default function StorytellerFlow() {
     };
 
     // Función para agregar un mensaje al contexto de un agente
-    interface AddMessageParams {
-        context: AgentContextManager;
-        agent: keyof AgentContextManager;
-        content: string;
-        role: 'user' | 'assistant';
-    }
 
-    const addMessageToContext = ({ context, agent, content, role }: AddMessageParams): AgentContextManager => ({
-        ...context,
-        [agent]: [...(context[agent] || []), { role, content }]
-    });
-    const createStorySummary = async () => {
-        const initialValue = '';
-        const sumWithInitial = agentContextManager.storyteller.reduce(
-            (accumulator, currentValue) => accumulator + `${currentValue.role}: ${currentValue.content}\n`,
-            initialValue,
-        );
-        const storySummary = await resumeStory(sumWithInitial)
-        console.log(storySummary)
-        return storySummary
-    }
 
     const handleVoiceChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
         const voiceName = e.target.value;
@@ -301,7 +256,7 @@ export default function StorytellerFlow() {
                     </div>
                 </div>
                 :
-                <Endgame storyConclusion={agentContextManager.storyteller.slice(-1)[0].content.toString()} storySummary={storySummary} />}
+                <Endgame storyConclusion={formattedResponse.paragraph} storySummary={storySummary} />}
         </>
     );
 }
