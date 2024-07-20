@@ -45,6 +45,19 @@ export async function POST(req: Request) {
             return {};
           }
         }),
+        solvedCase: tool({
+          //Cuando llamar a la tool
+          description: 'Se ejecuta cuando el investigador resuelve el caso',
+          parameters: z.object({epilogue: z.string().describe('Epilogo de la historia. Futuro de los personajes despues de que el investigador resuelva el caso.')}),
+          //Funcion que se ejecuta cuando se llama a la tool
+          execute: async ({  epilogue }) => {
+            console.log("Game over");
+            console.log("epilogue: " + epilogue );
+            gameOver = true;
+            messageAgent = epilogue ;
+            return {};
+          }
+        }),
 
         speakWithNpc: tool({
           //Cuando llamar a la tool
