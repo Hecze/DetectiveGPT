@@ -14,7 +14,7 @@ interface AddMessageParams {
     role: 'user' | 'assistant';
 }
 
-const initialPrompt = 'Hay Dos personajes muy importantes de tu historia son juan o Pedro. me permitiras hablar con ellos al principio.';
+const initialPrompt = 'Hay Dos personajes muy importantes de tu historia son esther y hector. me permitiras hablar con ellos al principio. Luego puedes presentar a otros personajes con que hablar. todoslos personajes deben tener nombre propio, sin tilde';
 
 const initialStorytellerMessages: CoreMessage[] = [
     { content: 'Antes de comenzar la historia te daré alguans instrucciones', role: "user" },
@@ -26,8 +26,6 @@ const initialStorytellerMessages: CoreMessage[] = [
 
 let agentContextPool: AgentContextPool = {
     storyteller: initialStorytellerMessages as CoreMessage[],
-    juan: [] as CoreMessage[],
-    pedro: [] as CoreMessage[],
 };
 
 // Agregar un nuevo mensaje al contexto de un agente específico y actualizar el pool

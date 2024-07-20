@@ -19,7 +19,7 @@ type Voice = {
     voiceURI?: string;
 };
 
-const initialPrompt = 'Hay Dos personajes muy importantes de tu historia son juan o Pedro. me permitiras hablar con ellos al principio.'
+const initialPrompt = 'Hay Dos personajes muy importantes de tu historia son esther y hector. me permitiras hablar con ellos al principio.'
 
 const initialStorytellerMessages: CoreMessage[] = [
     { content: 'Antes de comenzar la historia te daré alguans instrucciones', role: "user" },
@@ -49,15 +49,10 @@ const initialStorytellerMessages: CoreMessage[] = [
 
 // Cuando el jugador resuelve el crimen debes responder con el desenlace de la historia`
 
-interface AgentContextManager {
-    storyteller: CoreMessage[];
-    [key: string]: CoreMessage[];
-}
-
 export default function StorytellerFlow() {
     const audioRef = useRef<HTMLAudioElement>(null);
     const [isAudioPlaying, setIsAudioPlaying] = useState(false);
-    const [currentAgent, setCurrentAgent] = useState<"storyteller" | "juan" | "pedro">("storyteller");
+    const [currentAgent, setCurrentAgent] = useState("storyteller");
     const [gameOver, setGameOver] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [assitantResponse, setAssitantResponse] = useState('');

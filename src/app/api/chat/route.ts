@@ -25,10 +25,10 @@ export async function POST(req: Request) {
     const result = await generateText({
       // model: openai('gpt-4-turbo'), // $5.00 x millon de requests
       model: openai('gpt-4o-mini'), // $0.50 x millon de requests
-      system: `Máximo 300 caracteres. Eres un narrador de historias interactivas. Al final de cada respuesta, añade 3 opciones cortas realizables en la situación actual. Los personajes tienen nombres. No utilices juicios de valor. Casi no hay registros de los criminales; solo se conocen rumores. Habla siempre en segunda persona dirigíendote a mí, es decir, el juegador o el usuario.
-      parrafo de la historia. parrafo de la historia: por ejemplo "te encuentras con tu amigo juan",
-      opcion 1: hablar con juan,
-      opcion 2: hablar con pedro
+      system: `Máximo 300 caracteres. Eres un narrador de historias interactivas. La trama es un crimen sin resolver.Al final de cada respuesta, añade 3 opciones cortas realizables en la situación actual. Los personajes tienen nombres sin tildes. No utilices juicios de valor. Casi no hay registros de los criminales; solo se conocen rumores. Habla siempre en segunda persona dirigíendote a mí, es decir, el juegador o el usuario.
+      parrafo de la historia. parrafo de la historia: por ejemplo "te encuentras con tu amigo German",
+      opcion 1: hablar con German,
+      opcion 2: hablar con hector
       opcion 3: ...,
       `,
       messages: messages.storyteller,
@@ -64,14 +64,14 @@ export async function POST(req: Request) {
           //Cuando llamar a la tool
           description: 'El jugador desea hablar con un personaje especifico',
           parameters: z.object({
-            name: z.string().describe('El nombre del personaje. Puede ser juan o pedro'),
-            prompt: z.string().describe('Caracteristicas del persona y su rol en la historia. por ejemplo: "eres Pedro, una chico pescador que vive en la esquina. eras amigo de la victima llamada William"'),
+            name: z.string().describe('El nombre del personaje. Puede ser esther o hector, etc. nunca usar nombres con tilde'),
+            prompt: z.string().describe('Caracteristicas del persona y su rol en la historia. por ejemplo: "eres hector, una chico pescador que vive en la esquina. eras amigo de la victima llamada William"'),
           }),
           //Funcion que se ejecuta cuando se llama a la tool
           execute: async ({ name, prompt }) => {
             console.log("speakingWithNpc");
             console.log("name: " + name, "\nprompt: " + prompt);
-            const agentResponse: AgentResponse = await speakWithNpc(name, prompt, messages[name.toLowerCase()] as CoreMessage[]);
+            const agentResponse: AgentResponse = await speakWithNpc(name, prompt, messages[name.toLowerCase()] ? messages[name.toLowerCase()] as CoreMessage[]: [] as CoreMessage[]);
             currentAgent = agentResponse.name;
             messageAgent = agentResponse.message;
             gameOver = agentResponse.gameOver;
@@ -159,7 +159,7 @@ async function textToJson(text: string) {
 async function speakWithNpc(name: string, prompt: string, messages: CoreMessage[]) {
   'use server';
   console.log("name: " + name, "\nprompt: " + prompt, "\nmessages: " + JSON.stringify(messages));
-  let currentAgent: "juan" | "pedro" | "storyteller" = name.toLowerCase() as "juan" | "pedro" | "storyteller";
+  let currentAgent: string = name.toLowerCase();
   let messageAgent = "";
   let resumeOfAllConversation = "";
   let gameOver = false;
@@ -170,6 +170,19 @@ async function speakWithNpc(name: string, prompt: string, messages: CoreMessage[
     messages: messages,
     maxTokens: 200,
     tools: {
+      endConversation: tool({
+        //Cuando llamar a la tool
+        description: 'Se ejecuta cuando el usuario se despide de ' + name,
+        parameters: z.object({ resume: z.string().describe('Resumen detallado de la informacion recaudada') }),
+        //Funcion que se ejecuta cuando se llama a la tool
+        execute: async ({ resume }) => {
+          console.log("Anotas todo lo conversado con " + name + " en tu libreta: " + resume);
+          currentAgent = "storyteller";
+          //mensaje que se le pasará al storyteller
+          resumeOfAllConversation = resume;
+          return
+        }
+      }),
       investigatorIsDead: tool({
         //Cuando llamar a la tool
         description: 'Se ejecuta cuando el investigador muere',
@@ -196,19 +209,7 @@ async function speakWithNpc(name: string, prompt: string, messages: CoreMessage[
           return {};
         }
       }),
-      endFlow: tool({
-        //Cuando llamar a la tool
-        description: 'Se ejecuta cuando el investigador se despide de ' + name,
-        parameters: z.object({ resume: z.string().describe('Resumen detallado de la informacion recaudada') }),
-        //Funcion que se ejecuta cuando se llama a la tool
-        execute: async ({ resume }) => {
-          console.log("Anotas todo lo conversado con " + name + " en tu libreta: " + resume);
-          currentAgent = "storyteller";
-          //mensaje que se le pasará al storyteller
-          resumeOfAllConversation = resume;
-          return
-        }
-      })
+
     }
   });
 
