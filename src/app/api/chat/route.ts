@@ -23,7 +23,7 @@ export async function POST(req: Request) {
 
     const result = await generateText({
       // model: openai('gpt-4-turbo'), // $5.00 x millon de requests
-      model: openai('gpt-3.5-turbo'), // $0.50 x millon de requests
+      model: openai('gpt-4o-mini'), // $0.50 x millon de requests
       system: `Máximo 300 caracteres. Eres un narrador de historias interactivas. Al final de cada respuesta, añade 3 opciones cortas realizables en la situación actual. Los personajes tienen nombres. No utilices juicios de valor. Casi no hay registros de los criminales; solo se conocen rumores. Habla siempre en segunda persona dirigíendote a mí, es decir, el juegador o el usuario.
       parrafo de la historia. parrafo de la historia: por ejemplo "te encuentras con tu amigo juan",
       opcion 1: hablar con juan,
@@ -32,26 +32,26 @@ export async function POST(req: Request) {
       `,
       messages: messages.storyteller,
       tools: {
-        // investigatorIsDead: tool({
-        //   //Cuando llamar a la tool
-        //   description: 'Se ejecuta cuando el investigador muere',
-        //   parameters: z.object({reasonOfDead: z.string().describe('Razón de la muerte')}),
-        //   //Funcion que se ejecuta cuando se llama a la tool
-        //   execute: async ({ reasonOfDead }) => {
-        //     console.log("Game over");
-        //     console.log("Razón de la muerte: " + reasonOfDead );
-        //     gameOver = true;
-        //     messageAgent = "Razón de la muerte: " + reasonOfDead ;
-        //     return {};
-        //   }
-        // }),
+        investigatorIsDead: tool({
+          //Cuando llamar a la tool
+          description: 'Se ejecuta cuando el investigador muere',
+          parameters: z.object({reasonOfDead: z.string().describe('Razón de la muerte')}),
+          //Funcion que se ejecuta cuando se llama a la tool
+          execute: async ({ reasonOfDead }) => {
+            console.log("Game over");
+            console.log("Razón de la muerte: " + reasonOfDead );
+            gameOver = true;
+            messageAgent = "Razón de la muerte: " + reasonOfDead ;
+            return {};
+          }
+        }),
 
         speakWithNpc: tool({
           //Cuando llamar a la tool
           description: 'El jugador desea hablar con un personaje especifico',
           parameters: z.object({
             name: z.string().describe('El nombre del personaje. Puede ser juan o pedro'),
-            prompt: z.string().describe('Mensaje para el personaje. por ejemplo: "eres Pedro, una chico implicado en un crimen"'),
+            prompt: z.string().describe('Caracteristicas del persona y su rol en la historia. por ejemplo: "eres Pedro, una chico pescador que vive en la esquina. eras amigo de la victima llamada William"'),
           }),
           //Funcion que se ejecuta cuando se llama a la tool
           execute: async ({ name, prompt }) => {
@@ -125,7 +125,7 @@ async function textToJson(text: string) {
   'use server';
 
   const { object } = await generateObject({
-    model: openai('gpt-3.5-turbo'),
+    model: openai('gpt-4o-mini'),
     system: `Transformas texto a formato JSON. siguiendo el esquema: paragraph, option1, option2, option3. No modifiques el contenido.`,
     prompt: text,
     maxTokens: 200,
@@ -149,8 +149,8 @@ async function speakWithNpc(name: string, prompt: string, messages: CoreMessage[
   let resumeOfAllConversation = "";
 
   const result = await generateText({
-    model: openai('gpt-3.5-turbo'),
-    system: `Maximo 150 caracteres. Eres un personaje en una novela de misterio. Tu nombre es ${name}. Habla en primera persona, con respuestas cortas. No eres el investigador. El investigador te entrevistara para encontrar pruebas. Tienes informacion util para el desemvolvimiento de la trama`,
+    model: openai('gpt-4o-mini'),
+    system: `Maximo 150 caracteres. Eres un personaje en una novela de misterio. Tu nombre es ${name}. Habla en primera persona. No eres el investigador. ${prompt}`,
     messages: messages,
     maxTokens: 200,
     tools: {
