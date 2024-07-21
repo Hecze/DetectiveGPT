@@ -13,28 +13,34 @@ export default function StorytellerFlow() {
     "Pasional",
     "Asesinato en serie",
     "Infantil",
+    "Anime",
   ]);
   const [currentSubcategory, setCurrentSubcategory] = useState("Sobrenatural");
 
   return (
     <div className="flex flex-col items-center">
+      <img width="200" height="200" src="logo.png" />
       <div className="mb-4 text-center">
-        <p className="text-2xl">Personalidad:</p>
+        <p className="text-2xl">Elige la personalidad del detective</p>
         <PersonalitySlider
+          tag="Paciencia"
           options={["Impaciente", "Neutral", "Paciente"]}
         ></PersonalitySlider>
         <PersonalitySlider
+          tag="Optimismo"
           options={["Pesimista", "Positivo", "Optimista"]}
         ></PersonalitySlider>
         <PersonalitySlider
-          options={["Amable", "Cortés", "Maleducado"]}
+          tag="Actitud"
+          options={["Maleducado", "Amable", "Cortés"]}
         ></PersonalitySlider>
         <PersonalitySlider
-          options={["Metódico", "Adaptable", "Espontáneo"]}
+          tag="Espontaneidad"
+          options={["Adaptable", "Espontáneo", "Metódico"]}
         ></PersonalitySlider>
       </div>
-      <p className="text-2xl">Subcategorías:</p>
-      <div className="flex gap-3 items-center">
+      <p className="text-2xl">Elige la trama de la historia:</p>
+      <div className="flex flex-wrap align-middle gap-3 items-center justify-center">
         {availableSubcategories.map((subcategory) => (
           <Button
             key={subcategory}

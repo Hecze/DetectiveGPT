@@ -1,12 +1,16 @@
 // src/components/PersonalitySlider.tsx
 
-import React, { useState } from 'react';
+import React, { useState } from "react";
 
 interface PersonalitySliderProps {
+  tag: string;
   options: string[];
 }
 
-const PersonalitySlider: React.FC<PersonalitySliderProps> = ({ options }) => {
+const PersonalitySlider: React.FC<PersonalitySliderProps> = ({
+  tag,
+  options,
+}) => {
   const [personality, setPersonality] = useState(options[1]); // Iniciar con la opción central por defecto
 
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -24,7 +28,7 @@ const PersonalitySlider: React.FC<PersonalitySliderProps> = ({ options }) => {
         onChange={handleChange}
         className="slider w-72 appearance-none bg-gray-400 h-1 rounded-full mt-3 outline-none"
       />
-      <p className="text-xl mt-3">Personalidad: {personality}</p>
+      <p className="text-xl mt-3"><b>{tag}</b>: {personality}</p>
     </div>
   );
 };
