@@ -18,7 +18,7 @@ export default function StorytellerFlow() {
   const [currentSubcategory, setCurrentSubcategory] = useState("Sobrenatural");
 
   return (
-    <div className="flex flex-col items-center">
+    <div className="w-1/2 m-auto flex flex-col items-center">
       <img width="200" height="200" src="logo.png" />
       <div className="mb-4 text-center">
         <p className="text-2xl">Elige la personalidad del detective</p>
