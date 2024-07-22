@@ -1,59 +1,153 @@
 import { CoreMessage } from "ai";
-import { z } from 'zod';
 import { fetchOpenAI } from "./fetchOpenAI";
 import { resumeStory } from "@/app/actions";
 
+/**
+ * Interface representing the pool of agent contexts.
+ */
 interface AgentContextPool {
-    storyteller: CoreMessage[];
     [key: string]: CoreMessage[];
 }
 
+/**
+ * Interface for parameters required to add a message to an agent's context.
+ */
 interface AddMessageParams {
-    agent: keyof AgentContextPool;
+    agentName: keyof AgentContextPool;
     content: string;
-    role: 'user' | 'assistant';
+    role: 'user' | 'assistant' | 'system';
 }
 
-const initialPrompt = 'Hay Dos personajes muy importantes de tu historia son esther y hector. me permitiras hablar con ellos al principio. Luego puedes presentar a otros personajes con que hablar. todoslos personajes deben tener nombre propio, sin tilde';
+/**
+ * Interface for parameters required to create a new agent context.
+ */
+interface CreateAgentContextParams {
+    /**
+     * The unique identifier for the agent.
+     */
+    agentName: keyof AgentContextPool;
+    
+    /**
+     * The initial prompt that defines the agent's role and behavior.
+     * This is typically a concise statement describing the agent's function or role.
+     * For example: "You are a baker", "You are a story narrator", "You are a restaurant assistant".
+     * 
+     * This prompt is used with the 'system' role and sets the foundational context for the agent.
+     * 
+     * **Recommended Maximum Characters**: 250
+     */
+    forgerPrompt: string;
+    
+    /**
+     * An optional prompt to provide additional instructions or refine the agent's behavior.
+     * This can include more detailed or extensive instructions that shape the agent's personality or responses.
+     * For example: "You are friendly and helpful. When responding, always ask if the user needs further assistance."
+     * 
+     * This prompt is used with the 'user' role and helps to adjust or add specifics to the agent's behavior beyond the initial role.
+     * 
+     * **Recommended Maximum Characters**: 2500
+     */
+    adjustmentPrompt?: string;
+}
 
-const initialStorytellerMessages: CoreMessage[] = [
-    { content: 'Antes de comenzar la historia te daré alguans instrucciones', role: "user" },
-    { content: 'Prestaré atencion a las intrucciones antes de entrar en mi rol como narrador', role: "assistant" },
-    { content: initialPrompt, role: "user" },
-    { content: 'Anotado ¿Estas Listo para empezar la historia?', role: "assistant" },
-    { content: 'Sí, entra en tu papel de narrador y no vuelvas a salir de ahi', role: "user" },
-]
+/**
+ * Interface for parameters required to get a reply from an agent.
+ */
+interface GetAgentReplyParams {
+    agentName: keyof AgentContextPool;
+    content: string;
+}
 
-let agentContextPool: AgentContextPool = {
-    storyteller: initialStorytellerMessages as CoreMessage[],
-};
+// Agent context pool to store messages for each agent
+let agentContextPool: AgentContextPool = {};
 
-// Agregar un nuevo mensaje al contexto de un agente específico y actualizar el pool
-const addMessageToAgentContext = ({ agent, content, role }: AddMessageParams): void => {
+// Auxiliary Functions
+
+/**
+ * Adds a new message to the context of a specific agent and updates the pool.
+ * 
+ * @param {AddMessageParams} params - The parameters for adding a message.
+ */
+const addMessageToAgentContext = ({ agentName, content, role }: AddMessageParams): void => {
     agentContextPool = {
         ...agentContextPool,
-        [agent]: [...(agentContextPool[agent] || []), { role, content }]
+        [agentName]: [...(agentContextPool[agentName] || []), { role, content }]
     };
 };
 
-// Obtener la respuesta de un agente específico
-export const getAgentReply = async ({ agent, content }: { agent: keyof AgentContextPool, content: string }) => {
-    // Almacenar el nuevo mensaje del usuario en el contexto del agente
-    console.log('Antes de agregar mensaje de usuario:', agentContextPool);
-    console.log('Mensaje de usuario:', agent, content);
-    addMessageToAgentContext({ agent, content, role: 'user' });
-    console.log('Después de agregar mensaje de usuario:', agentContextPool);
+/**
+ * Initializes the context for a new agent with the provided forger prompt and optional adjustment prompt.
+ * 
+ * @param {CreateAgentContextParams} params - The parameters for creating the agent context.
+ */
+const initializeAgentContext = ({ agentName, forgerPrompt, adjustmentPrompt }: CreateAgentContextParams): void => {
+    // Add the foundational role description for the agent
+    addMessageToAgentContext({ agentName, content: forgerPrompt, role: 'system' });
 
-    // Llamar a la API para obtener la respuesta
+    if (adjustmentPrompt) {
+        const instructions = [
+            { role: 'user', content: 'Before starting the story, I will provide some instructions' },
+            { role: 'assistant', content: 'I will pay attention to the instructions before entering my role' },
+            { role: 'user', content: adjustmentPrompt },
+            { role: 'assistant', content: 'Noted. Are you ready to start the story?' },
+            { role: 'user', content: 'Yes, enter your role and do not step out of it' }
+        ];
+        instructions.forEach(msg => addMessageToAgentContext({ agentName, content: msg.content, role: msg.role as "user" | "assistant" }));
+    }
+};
+
+// Main Functions
+
+/**
+ * Creates a new agent with the specified context.
+ * 
+ * @param {CreateAgentContextParams} params - The parameters for creating the agent.
+ * @throws Will throw an error if the agent already exists.
+ */
+export const createAgent = ({ agentName, forgerPrompt, adjustmentPrompt }: CreateAgentContextParams): void => {
+    if (agentName in agentContextPool) {
+        throw new Error('Agent already exists');
+    }
+    initializeAgentContext({ agentName, forgerPrompt, adjustmentPrompt });
+};
+
+/**
+ * Gets a reply from the specified agent based on the provided user input.
+ * 
+ * @param {GetAgentReplyParams} params - The parameters for getting a reply from the agent.
+ * @returns The response from the agent.
+ */
+export const getAgentReply = async ({ agentName, content }: GetAgentReplyParams) => {
+    // Store the new user message in the agent's context
+    console.log('Before adding user message:', agentContextPool);
+    console.log('User message:', agentName, content);
+    addMessageToAgentContext({ agentName, content, role: 'user' });
+    console.log('After adding user message:', agentContextPool);
+
+    // Call the API to get the agent's reply
     const response = await fetchOpenAI(agentContextPool);
-    console.log('Respuesta de la API:', response);
+    console.log('API response:', response);
 
-    // La API detecta automáticamente con qué agente queremos hablar y nos responde 
-    addMessageToAgentContext({ agent: response.currentAgent, content: response.agentResponse, role: 'assistant' });
-    console.log('Después de agregar mensaje de asistente:', agentContextPool);
+    // Add the assistant's response to the agent's context
+    addMessageToAgentContext({ agentName: response.currentAgent, content: response.agentResponse, role: 'assistant' });
+    console.log('After adding assistant message:', agentContextPool);
 
     return response;
-}
+};
+
+/**
+ * Gets all messages for a specific agent.
+ * 
+ * @param {string} agentName - The name of the agent to retrieve messages for.
+ * @returns {CoreMessage[]} An array of messages for the specified agent.
+ * @throws Will throw an error if the agent does not exist.
+ */
+export const getMessages = (agentName: keyof AgentContextPool): CoreMessage[] => {
+    if (!(agentName in agentContextPool)) {
+        throw new Error(`Agent "${agentName}" does not exist.`);
+    }
+    return agentContextPool[agentName];
+};
 
 export const createStorySummary = async () => {
     const initialValue = '';
@@ -65,3 +159,6 @@ export const createStorySummary = async () => {
     console.log(storySummary);
     return storySummary;
 }
+
+// Export the agent context pool and other functions if necessary
+export { agentContextPool };

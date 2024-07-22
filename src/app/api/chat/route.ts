@@ -62,9 +62,9 @@ export async function POST(req: Request) {
 
         speakWithNpc: tool({
           //Cuando llamar a la tool
-          description: 'El jugador desea hablar con un personaje especifico',
+          description: 'se ejecuta cuando el jugador dice "Hablar con [personaje]"',
           parameters: z.object({
-            name: z.string().describe('El nombre del personaje. Puede ser esther o hector, etc. nunca usar nombres con tilde'),
+            name: z.string().describe('Nombre del personaje. nunca usar nombres con tilde'),
             prompt: z.string().describe('Caracteristicas del persona y su rol en la historia. por ejemplo: "eres hector, una chico pescador que vive en la esquina. eras amigo de la victima llamada William"'),
           }),
           //Funcion que se ejecuta cuando se llama a la tool
