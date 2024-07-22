@@ -190,7 +190,7 @@ async function speakWithNpc(name: string, prompt: string, messages: CoreMessage[
           }
           else if (cause.includes("despedida")) {
             messageAgent = "Anotas todo lo conversado con " + name + " en tu libreta: " + resume;
-            gameOver = true;
+            gameOver = false;
           }
           //mensaje que se le pasará al storyteller
           else {
