@@ -7,10 +7,10 @@ export default function Endgame({ storyConclusion, storySummary }: { storyConclu
     }
 
     return (
-        <main className="flex flex-col min-h-screen w-screen justify-center bg-[#18130F] overflow-hidden">
+        <main className="text-white flex flex-col min-h-screen w-screen justify-center bg-[#18130F] overflow-hidden">
             <div className="m-3 md:w-1/2 md:m-auto">
                 <div className="pb-3">
-                    <h1 className="font-bold">!Has resuelto el caso!</h1>
+                    <h1 className="font-bold">Fin del juego</h1>
                     {/* <p>Isabela fue encontrada sana y salva, sus familiares agradecieron la transparencia en la información y el caso se resolvió en pocas semanas. El zorro fue capturado y todo volvió a la normalidad.</p> */}
                     <p>{storyConclusion}</p>
                 </div>

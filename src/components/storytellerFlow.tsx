@@ -38,6 +38,7 @@ export default function StorytellerFlow() {
     const [voices, setVoices] = useState<Voice[]>([]);
     const [selectedVoice, setSelectedVoice] = useState<string>('Google español');
     const [inputValue, setInputValue] = useState<string>('');
+    const [epilogue, setEpilogue] = useState<string>('')
     const [storySummary, setStorySummary] = useState<string>('')
 
     useEffect(() => {
@@ -118,11 +119,19 @@ export default function StorytellerFlow() {
         setInputValue("");
         try {
             // Obtener la respuesta del asistente
-            let { currentAgent: nextAgent, formattedResponse, agentResponse } = await getAgentReply({ agent: currentAgent, content: userMessage });
+            let { currentAgent: nextAgent, formattedResponse, agentResponse, gameOver: agentGameOver } = await getAgentReply({ agent: currentAgent, content: userMessage });
 
             console.log("Le hablamos al agente: " + currentAgent);
             console.log("Nos responde el agente: " + nextAgent);
             console.log("La respuesta del agente es: " + agentResponse);
+            
+            // if(formattedResponse.option1 === "" && formattedResponse.option2 === "" && formattedResponse.option3 === "" && nextAgent === "storyteller") {
+            if(agentGameOver) {
+                // Si no hay opciones, establecer el final del juego
+                setEpilogue(agentResponse);
+                setStorySummary(await createStorySummary());
+                setGameOver(true);
+            }
 
             // Actualizar estados
             setformattedResponse(formattedResponse);
@@ -228,7 +237,7 @@ export default function StorytellerFlow() {
                     </div>
                 </div>
                 :
-                <Endgame storyConclusion={formattedResponse.paragraph} storySummary={storySummary} />}
+                <Endgame storyConclusion={epilogue} storySummary={storySummary} />}
         </>
     );
 }

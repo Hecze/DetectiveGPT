@@ -19,6 +19,7 @@ const openaiResponseSchema = z.object({
     agentResponse: z.string(),
     currentAgent: z.string(),
     formattedResponse: formattedResponseSchema,
+    gameOver: z.boolean()
 });
 
 type OpenaiResponse = z.infer<typeof openaiResponseSchema>;

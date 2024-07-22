@@ -87,7 +87,9 @@ export async function POST(req: Request) {
     //Fin del juego
     if (gameOver) {
       console.log("Game over");
-      return NextResponse.json({ agentResponse: messageAgent, formattedResponse: { paragraph: messageAgent, option1: "", option2: "", option3: "" }, currentAgent: "storyteller" }, { status: 200 });
+      const response = NextResponse.json({ gameOver: true, agentResponse: messageAgent, formattedResponse: { paragraph: messageAgent, option1: "", option2: "", option3: "" }, currentAgent: "storyteller" }, { status: 200 });
+      console.log(response)
+      return response 
     }
 
     //El mensaje de respuesta es del storyteller
@@ -114,13 +116,13 @@ export async function POST(req: Request) {
       //const resultFormated = { ...result, text: resultTextFormated.notification }
       console.log(`Chat API's result.text: ${textToReturn}`);
       console.log(`Chat API's resultTextFormated: ${JSON.stringify(resultTextFormated)}`);
-      return NextResponse.json({ agentResponse: textToReturn, formattedResponse: resultTextFormated, currentAgent }, { status: 200 });
+      return NextResponse.json({ agentResponse: textToReturn, formattedResponse: resultTextFormated, currentAgent, gameOver }, { status: 200 });
     }
 
     //El mensaje de respuesta es de un NPC
     if (currentAgent !== "storyteller" && messageAgent != "") {
       console.log(`Chat API's messageAgent: ${messageAgent}`);
-      return NextResponse.json({ agentResponse: messageAgent, formattedResponse: { paragraph: messageAgent, option1: "", option2: "", option3: "" }, currentAgent }, { status: 200 });
+      return NextResponse.json({ agentResponse: messageAgent, formattedResponse: { paragraph: messageAgent, option1: "", option2: "", option3: "" }, currentAgent, gameOver }, { status: 200 });
     }
 
     //El mensaje de respuesta es vacío
@@ -186,13 +188,18 @@ async function speakWithNpc(name: string, prompt: string, messages: CoreMessage[
       investigatorIsDead: tool({
         //Cuando llamar a la tool
         description: 'Se ejecuta cuando el investigador muere',
-        parameters: z.object({reasonOfDead: z.string().describe('Razón de la muerte')}),
+        parameters: z.object({
+          reasonOfDead: z.string().describe('Razón de la muerte'),
+          epilogue: z.string().describe('Epilogo de la historia. Futuro de los personajes despues de que el investigador resuelva el caso.')
+        }),
         //Funcion que se ejecuta cuando se llama a la tool
-        execute: async ({ reasonOfDead }) => {
+        execute: async ({ epilogue, reasonOfDead }) => {
           console.log("Game over");
+          console.log("Epilogo: " + epilogue)
           console.log("Razón de la muerte: " + reasonOfDead );
           gameOver = true;
-          messageAgent = "Razón de la muerte: " + reasonOfDead ;
+          // messageAgent = "Razón de la muerte: " + reasonOfDead ;
+          messageAgent = epilogue
           return {};
         }
       }),
@@ -213,15 +220,19 @@ async function speakWithNpc(name: string, prompt: string, messages: CoreMessage[
     }
   });
 
-  if (currentAgent !== "storyteller") {
-    messageAgent = result.text;
+  if (!gameOver) {
+    if (currentAgent !== "storyteller") {
+      messageAgent = result.text;
+    }
+    else {
+      console.log("Se ha terminado la conversación con " + name + ". El resumen es: " + resumeOfAllConversation);
+      messageAgent = `Anotas todo lo conversado con ${name} en tu libreta: ${resumeOfAllConversation} \n `;
+    }
   }
-  else {
-    console.log("Se ha terminado la conversación con " + name + ". El resumen es: " + resumeOfAllConversation);
-    messageAgent = `Anotas todo lo conversado con ${name} en tu libreta: ${resumeOfAllConversation} \n `;
-  }
+  
 
   const agentResponse: AgentResponse = { name: currentAgent, message: messageAgent, gameOver: gameOver };
+  console.log("agentResponse: " + JSON.stringify(agentResponse))
   return agentResponse;
 }
 
