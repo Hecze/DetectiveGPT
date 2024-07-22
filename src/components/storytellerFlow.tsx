@@ -200,25 +200,29 @@ export default function StorytellerFlow() {
                             priority
                         />
                         {currentAgent === "storyteller" ? <Options /> :
-                            <div className="bg-[#413A32] rounded-xl flex flex-row mt-12 justify-center items-center">
-                                <input
-                                    type="text"
-                                    placeholder={`Escribe una respuesta para ${currentAgent}...`}
-                                    value={inputValue}
-                                    key="input"
-                                    onChange={e => setInputValue(e.target.value)}
-                                    onKeyDown={e => e.key === "Enter" && sendUserMessage(inputValue)}
-                                    className="p-4 bg-[#413A32] rounded-xl w-full focus:outline-none"
-                                    disabled={isLoading}
-                                />
-                                <button
-                                    disabled={isLoading}
-                                    className={`p-2 mr-4 ${isLoading ? "opacity-20" : "opacity-100 cursor-pointer"}`}
-                                    onClick={() => sendUserMessage(inputValue)}
-                                >
-                                    <IoSendSharp size={24} />
-                                </button>
-                            </div>
+                            <>
+                                <div className="bg-[#413A32] rounded-xl flex flex-row mt-12 justify-center items-center mb-12">
+                                    <input
+                                        type="text"
+                                        placeholder={`Escribe una respuesta para ${currentAgent}...`}
+                                        value={inputValue}
+                                        key="input"
+                                        onChange={e => setInputValue(e.target.value)}
+                                        onKeyDown={e => e.key === "Enter" && sendUserMessage(inputValue)}
+                                        className="p-4 bg-[#413A32] rounded-xl w-full focus:outline-none"
+                                        disabled={isLoading}
+                                    />
+                                    <button
+                                        disabled={isLoading}
+                                        className={`p-2 mr-4 ${isLoading ? "opacity-20" : "opacity-100 cursor-pointer"}`}
+                                        onClick={() => sendUserMessage(inputValue)}
+                                    >
+                                        <IoSendSharp size={24} />
+                                    </button>
+                                </div>
+                                <Option isLoading={isLoading} text="Terminar Conversación" onClick={() => sendUserMessage("Terminar Conversación")} />
+                            </>
+
                         }
 
                     </div>
