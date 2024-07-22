@@ -86,11 +86,13 @@ const initializeAgentContext = ({ agentName, forgerPrompt, adjustmentPrompt }: C
 
     if (adjustmentPrompt) {
         const instructions = [
+            { role: 'user', content: 'Initializing instructions' },
             { role: 'user', content: 'Before starting the story, I will provide some instructions' },
             { role: 'assistant', content: 'I will pay attention to the instructions before entering my role' },
             { role: 'user', content: adjustmentPrompt },
             { role: 'assistant', content: 'Noted. Are you ready to start the story?' },
-            { role: 'user', content: 'Yes, enter your role and do not step out of it' }
+            { role: 'user', content: 'Yes' },
+            { role: 'user', content: 'Enter your role and do not step out of it' },
         ];
         instructions.forEach(msg => addMessageToAgentContext({ agentName, content: msg.content, role: msg.role as "user" | "assistant" }));
     }
@@ -136,22 +138,47 @@ export const getAgentReply = async ({ agentName, content }: GetAgentReplyParams)
 };
 
 /**
- * Gets all messages for a specific agent.
+ * Gets all messages for a specific agent, excluding certain initialization messages and ranges.
  * 
  * @param {string} agentName - The name of the agent to retrieve messages for.
- * @returns {CoreMessage[]} An array of messages for the specified agent.
+ * @returns {CoreMessage[]} An array of messages for the specified agent, excluding certain initialization messages and ranges.
  * @throws Will throw an error if the agent does not exist.
  */
 export const getMessages = (agentName: keyof AgentContextPool): CoreMessage[] => {
     if (!(agentName in agentContextPool)) {
         throw new Error(`Agent "${agentName}" does not exist.`);
     }
-    return agentContextPool[agentName];
+
+    const messages = agentContextPool[agentName];
+    let inRemovalRange = false;
+
+    const filteredMessages = messages.filter(message => {
+        // Check if the message is a 'system' role message
+        if (message.role === 'system') {
+            return false;
+        }
+
+        // Determine if we are in the removal range
+        if (message.content === 'Initializing instructions') {
+            inRemovalRange = true;
+            return false;
+        }
+        if (message.content === 'Enter your role and do not step out of it') {
+            inRemovalRange = false;
+            return false;
+        }
+
+        // Include messages outside the removal range
+        return !inRemovalRange;
+    });
+
+    return filteredMessages;
 };
+
 
 export const createStorySummary = async () => {
     const initialValue = '';
-    const sumWithInitial = agentContextPool.storyteller.reduce(
+    const sumWithInitial = getMessages('storyteller').reduce(
         (accumulator, currentValue) => accumulator + `${currentValue.role}: ${currentValue.content}\n`,
         initialValue,
     );

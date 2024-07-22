@@ -39,7 +39,7 @@ export async function resumeStory(story: string) {
   console.log(`Story to resume: ${story}`)
   const { text } = await generateText({
     model: openai('gpt-3.5-turbo'),
-    system: 'Recibes una historia de investigadores y la resumes en un párrafo. El formato resultante debe ser en tiempo pasado y debes poner énfasis en las partes donde hubo mayor tensión.',
+    system: 'Recibes una historia de investigadores y la resumes en un párrafo. Hablas en tercera persona, El formato resultante debe ser en tiempo pasado y debes poner énfasis en las partes donde hubo mayor tensión. No des opciones para responder',
     prompt: story,
   });
 
