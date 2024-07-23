@@ -20,9 +20,13 @@ export async function POST(req: Request) {
   try {
     const { messages } = await req.json();
     console.log('messages: ', messages);
+    let toolChoiceConfiguration: "auto" | "required" = "auto";
+    if(messages.storyteller[messages.storyteller.length - 1].content.includes("Hablar con")){
+      toolChoiceConfiguration = "required";
+    }
+
 
     const result = await generateText({
-      // model: openai('gpt-4-turbo'), // $5.00 x millon de requests
       model: openai('gpt-4o-mini'), // $0.50 x millon de requests
       system: `Máximo 300 caracteres. Eres un narrador de historias interactivas. La trama es un crimen sin resolver.Al final de cada respuesta, añade 3 opciones cortas realizables en la situación actual. Los personajes tienen nombres sin tildes. No utilices juicios de valor. Casi no hay registros de los criminales; solo se conocen rumores. Habla siempre en segunda persona dirigíendote a mí, es decir, el juegador o el usuario.
       parrafo de la historia. parrafo de la historia: por ejemplo "te encuentras con tu amigo German",
@@ -31,6 +35,7 @@ export async function POST(req: Request) {
       opcion 3: ...,
       `,
       messages: messages.storyteller,
+      toolChoice: toolChoiceConfiguration,
       tools: {
         investigatorIsDead: tool({
           //Cuando llamar a la tool
@@ -258,15 +263,15 @@ async function speakWithNpc(
             ),
           resume: z
             .string()
-            .describe('Resumen detallado de la informacion recaudada'),
+            .describe('Resumen detallado de la informacion recaudada. Usa todos los parrafos necesarios, no dejes informacion sin mencionar. Maximo 600 caracteres'),
         }),
         //Funcion que se ejecuta cuando se llama a la tool
         execute: async ({ cause, resume }) => {
           console.log(
             'Anotas todo lo conversado con ' +
-              name +
-              ' en tu libreta: ' +
-              resume
+            name +
+            ' en tu libreta: ' +
+            resume
           );
           if (cause.includes('muerte')) {
             messageAgent = 'El investigador ha muerto. ' + resume;
@@ -288,8 +293,8 @@ async function speakWithNpc(
             messageAgent = resume;
             console.log(
               'La ia ha devuelto un parametro inesperado: ' +
-                cause +
-                '\n. Parametro esperado: muerte, crimen resuelto o se despedida'
+              cause +
+              '\n. Parametro esperado: muerte, crimen resuelto o se despedida'
             );
           }
           currentAgent = 'storyteller';

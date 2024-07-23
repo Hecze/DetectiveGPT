@@ -11,7 +11,7 @@ export async function generate(messages: CoreMessage[]) {
 
   (async () => {
     const { partialObjectStream } = await streamObject({
-      model: openai('gpt-3.5-turbo'),
+      model: openai('gpt-4o-mini'),
       system: `Transformas texto a formato JSON.`,
       messages: messages,
       maxTokens: 200,
@@ -38,7 +38,7 @@ export async function generate(messages: CoreMessage[]) {
 export async function resumeStory(story: string) {
   console.log(`Story to resume: ${story}`);
   const { text } = await generateText({
-    model: openai('gpt-3.5-turbo'),
+    model: openai('gpt-4o-mini'),
     system:
       'Recibes una historia de investigadores y la resumes en un párrafo. Hablas en tercera persona, El formato resultante debe ser en tiempo pasado y debes poner énfasis en las partes donde hubo mayor tensión. No des opciones para responder',
     prompt: story,
