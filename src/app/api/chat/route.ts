@@ -15,21 +15,16 @@ interface AgentResponse {
 export async function POST(req: Request) {
   try {
     const { messages, currentAgent: lastCurrentAgent } = await req.json();
-    const agentResponse = await getAgentResponse(lastCurrentAgent, messages);
-
+    const agentResponse = await speakWithNpc(lastCurrentAgent, messages[lastCurrentAgent]);
     const { message, gameOver, name: currentAgent } = agentResponse;
+    let formattedResponse = { paragraph: message, option1: 'Continuar', option2: '', option3: '' }
 
     if (lastCurrentAgent === 'storyteller') {
-      const formattedResponse = await textToJson(message);
-      return createJsonResponse({ message, formattedResponse, currentAgent, gameOver });
+      //Solo darle un formato Json a la respuesta si se está hablando con el historyteller
+      formattedResponse = await textToJson(message);
     }
 
-    return createJsonResponse({
-      message,
-      formattedResponse: { paragraph: message, option1: 'Continuar', option2: '', option3: '' },
-      currentAgent,
-      gameOver,
-    });
+    return NextResponse.json({ agentResponse: message, formattedResponse, currentAgent, gameOver }, { status: 200 });
 
   } catch (error) {
     console.log(error);
@@ -40,26 +35,6 @@ export async function POST(req: Request) {
   }
 }
 
-async function getAgentResponse(lastCurrentAgent: string, messages: any): Promise<AgentResponse> {
-  if (lastCurrentAgent === "storyteller") {
-    return await speakWithStoryteller(messages);
-  } else {
-    return await speakWithNpc(lastCurrentAgent, messages[lastCurrentAgent]);
-  }
-}
-
-
-function createJsonResponse({ message, formattedResponse, currentAgent, gameOver }: any) {
-  return NextResponse.json(
-    {
-      agentResponse: message,
-      formattedResponse,
-      currentAgent,
-      gameOver,
-    },
-    { status: 200 }
-  );
-}
 
 async function textToJson(text: string) {
   const { object } = await generateObject({
@@ -78,16 +53,15 @@ async function textToJson(text: string) {
   return object;
 }
 
-async function speakWithNpc(name: string, messages: CoreMessage[], prompt?: string): Promise<AgentResponse> {
-  console.log("function speakWithNpc called", `name: ${name}`, `prompt: ${prompt}`, `messages: ${JSON.stringify(messages)}`);
-
+async function speakWithNpc(name: string, messages: CoreMessage[]): Promise<AgentResponse> {
+  //console.log("function speakWithNpc called", `name: ${name}`, `messages: ${JSON.stringify(messages)}`);
+  console.log(`\nFunction speakWithNpc  -------------------------------------------------------------------------------------------------------------------- \n\n  Name: ${name}`, `\n  N° Messages: ${messages.length}`);
   let currentAgent = name.toLowerCase();
   let messageAgent = '';
   let gameOver = false;
 
   const result = await generateText({
     model: openai('gpt-4o-mini'),
-    system: `Maximo 150 caracteres. Eres un personaje secuncario en una novela de misterio. Tu nombre es ${name}. Habla en primera persona. Estas hablando con el investigador del caso. ${prompt}`,
     messages: messages,
     maxTokens: 200,
     tools: {
@@ -104,7 +78,9 @@ async function speakWithNpc(name: string, messages: CoreMessage[], prompt?: stri
     },
   });
 
-  if (!gameOver && currentAgent !== 'storyteller') {
+
+  if (!gameOver) {
+    //Se sigue hablando con el npc
     messageAgent = result.text;
   }
 
@@ -114,121 +90,29 @@ async function speakWithNpc(name: string, messages: CoreMessage[], prompt?: stri
     gameOver,
   };
 
-  console.log('agentResponse: ', agentResponse);
+  console.log('  agentResponse: ', agentResponse);
+  console.log(`\n------------------------------------------------------------------------------------------------------------------------------------------`)
   return agentResponse;
 }
 
 
-async function handleEndConversation(cause: string, resume: string, name: string) {
+async function handleEndConversation(cause: "muerte" | "crimen resuelto" | "despedida", resume: string, name: string) {
   let messageAgent = `Anotas todo lo conversado con ${name} en tu libreta: ${resume}.`;
-  console.log(`handleEndConversation -> messageAgent: ${messageAgent}`);
+  console.log(`  ---> handleEndConversation`);
   let gameOver = false;
 
   if (cause === 'muerte') {
-    messageAgent = `El investigador ha muerto. ${resume}`;
+    messageAgent = `    El investigador ha muerto. ${resume}`;
     gameOver = true;
   } else if (cause === 'crimen resuelto') {
-    messageAgent = `El investigador ha resuelto el crimen. ${resume}`;
+    messageAgent = `    El investigador ha resuelto el crimen. ${resume}`;
     gameOver = true;
   }
+  else {
+    messageAgent = `    Anotados toco lo conversado con ${name} en tu libreta: ${resume}`;
+  }
+
+  console.log(`    La conversacion ha terminado por: ${cause}`);
 
   return { messageAgent, gameOver, currentAgent: 'storyteller' };
-}
-
-async function speakWithStoryteller(messages: any): Promise<AgentResponse> {
-  console.log('messages: ', messages);
-
-  let toolChoiceConfiguration: "auto" | "required" = "auto";
-  let currentAgent = "storyteller";
-  let messageAgent = '';
-  let gameOver = false;
-
-  // Verifica si messages.storyteller es un array y obtiene el último mensaje
-  const storytellerMessages = messages.storyteller;
-  const lastMessage = Array.isArray(storytellerMessages) ? storytellerMessages[storytellerMessages.length - 1] : null;
-  console.log("speakWithStoryteller -> lastMessage: ", lastMessage);
-  if (lastMessage && lastMessage.content.includes("Hablar con")) {
-    toolChoiceConfiguration = "required";
-    console.log("Tool is required")
-  }
-
-  const result = await generateText({
-    model: openai('gpt-4o-mini'),
-    messages: messages.storyteller,
-    maxTokens: 200,
-    toolChoice: toolChoiceConfiguration,
-    tools: {
-      investigatorIsDead: tool({
-        description: 'Se ejecuta cuando el investigador muere',
-        parameters: z.object({
-          reasonOfDead: z.string().describe('Razón de la muerte'),
-        }),
-        execute: async ({ reasonOfDead }) => {
-          ({ messageAgent, gameOver, currentAgent } = await handleInvestigatorIsDead(reasonOfDead));
-          console.log(`Generate Text -> tool InvestigatorIsDead invoked -> ${messageAgent}`);
-        }
-      }),
-      solvedCase: tool({
-        description: 'Se ejecuta cuando el investigador resuelve el caso',
-        parameters: z.object({
-          epilogue: z.string().describe('Epilogo de la historia. Futuro de los personajes despues de que el investigador resuelva el caso.'),
-        }),
-        execute: async ({ epilogue }) => {
-          ({ messageAgent, gameOver, currentAgent } = await handleSolvedCase(epilogue));
-        }
-          
-      }),
-      speakWithNpc: tool({
-        description: 'se ejecuta cuando el jugador dice "Hablar con [personaje]"',
-        parameters: z.object({
-          name: z.string().describe('Nombre del personaje. nunca usar nombres con tilde'),
-          prompt: z.string().describe('Caracteristicas del persona y su rol en la historia.'),
-        }),
-        execute: async ({ name, prompt }) => {
-          console.log('speakingWithNpc', `name: ${name}`, `prompt: ${prompt}`);
-          const agentResponse = await speakWithNpc(name, messages[name.toLowerCase()] || [], prompt);
-          currentAgent = agentResponse.name;
-          messageAgent = agentResponse.message;
-          gameOver = agentResponse.gameOver;
-          console.log('Nombre del npc: ', agentResponse.name);
-          console.log('Respuesta del npc: ', agentResponse.message);
-        },
-      }),
-    },
-  });
-
-  if (currentAgent === 'storyteller' && !gameOver) {
-    //La partida sigue en curso y se está hablando con el storyteller
-    messageAgent = result.text;
-  }
-
-  console.log(`Generate Text -> ${messageAgent}`);
-
-
-  const agentResponse: AgentResponse = {
-    name: currentAgent,
-    message: messageAgent,
-    gameOver,
-  };
-
-  console.log('speak with storyteller -> agentResponse: ', agentResponse);
-  return agentResponse;
-}
-
-async function handleInvestigatorIsDead(reasonOfDead: string) {
-  console.log('Game over', `Razón de la muerte: ${reasonOfDead}`);
-  return {
-    messageAgent: `Razón de la muerte: ${reasonOfDead}`,
-    gameOver: true,
-    currentAgent: 'storyteller',
-  };
-}
-
-async function handleSolvedCase(epilogue: string) {
-  console.log('Game over', `epilogue: ${epilogue}`);
-  return {
-    messageAgent: epilogue,
-    gameOver: true,
-    currentAgent: 'storyteller',
-  };
 }
