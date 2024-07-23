@@ -1,6 +1,7 @@
 'use client';
 import Speech from 'speak-tts';
 import Image from 'next/image';
+import { AgentResponse } from '@/types/agentResponse';
 import {
   useState,
   useEffect,
@@ -46,8 +47,8 @@ export default function StorytellerFlow({
   const [currentAgent, setCurrentAgent] = useState('storyteller');
   const [gameOver, setGameOver] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [assitantResponse, setAssitantResponse] = useState('');
-  const [formattedResponse, setformattedResponse] = useState({
+  const [assistantResponse, setAssistantResponse] = useState('');
+  const [formattedResponse, setFormattedResponse] = useState({
     paragraph: 'Bienvenido a una historia de misterio generada por IA',
     option1: 'Empezar Historia',
     option2: '',
@@ -157,50 +158,65 @@ export default function StorytellerFlow({
   }, [selectedVoice]);
 
   const sendUserMessage = async (userMessage: string) => {
+    // Reproducir el audio si está disponible
     if (audioRef && audioRef.current) {
       audioRef.current.play();
       audioRef.current.volume = 0.04;
     }
-
+  
     setIsAudioPlaying(true);
     setIsLoading(true);
-
-    if (userMessage === '') {
+  
+    // Salir si el mensaje está vacío
+    if (userMessage.trim() === '') {
       setIsLoading(false);
-      return; // Salir si text está vacío
+      return;
     }
-
+  
+    // Limpiar el valor de entrada
     setInputValue('');
+  
     try {
       // Obtener la respuesta del asistente
-      let {
-        currentAgent: nextAgent,
-        formattedResponse,
-        agentResponse,
-        gameOver: agentGameOver,
-      } = await getAgentReply({
+      const response = await getAgentReply({
         agentName: currentAgent,
         content: userMessage,
       });
-
-      console.log('Le hablamos al agente: ' + currentAgent);
-      console.log('Nos responde el agente: ' + nextAgent);
-      console.log('La respuesta del agente es: ' + agentResponse);
-
-      // if(formattedResponse.option1 === "" && formattedResponse.option2 === "" && formattedResponse.option3 === "" && nextAgent === "storyteller") {
-      if (agentGameOver) {
-        // Si no hay opciones, establecer el final del juego
-        setEpilogue(agentResponse);
+      console.log('Response: ', response);
+  
+      // Destructurar los valores del objeto de respuesta
+      const {
+        name: agentName,
+        content: {
+          text: agentReplyText,
+          formatted: agentReplyFormatted,
+        },
+        tools: {
+          gameOver: { executed: isGameOver },
+          changeAgent: { executed: agentChanged, newAgent: newAgentName }
+        }
+      } = response;
+  
+      console.log('Le hablamos al agente: ' + agentName);
+      console.log('La respuesta del agente es: ' + agentReplyText);
+  
+      if (isGameOver) {
+        // Establecer el epílogo y el resumen de la historia si el juego ha terminado
+        setEpilogue(agentReplyText);
         setStorySummary(await createStorySummary());
         setGameOver(true);
       }
-
+  
       // Actualizar estados
-      setformattedResponse(formattedResponse);
-      setAssitantResponse(agentResponse);
-      setCurrentAgent(nextAgent);
+      setFormattedResponse(agentReplyFormatted);
+      setAssistantResponse(agentReplyText);
+      if (agentChanged) {
+        console.log('El nuevo agente es: ' + newAgentName);
+        setCurrentAgent(newAgentName as string);
+      }
     } catch (error) {
-      setformattedResponse({
+      // Manejo de errores
+      setFormattedResponse({
         paragraph: 'Fin del Juego',
         option1: '',
         option2: '',
@@ -210,10 +226,10 @@ export default function StorytellerFlow({
       setStorySummary(await createStorySummary());
       setGameOver(true);
     }
-
+  
     setIsLoading(false);
   };
-
+  
   // Función para agregar un mensaje al contexto de un agente
 
   const handleVoiceChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -287,7 +303,7 @@ export default function StorytellerFlow({
             <p>
               {currentAgent === 'storyteller'
                 ? formattedResponse && formattedResponse.paragraph
-                : assitantResponse}
+                : assistantResponse}
             </p>
             <VoiceSelector />
             <Image

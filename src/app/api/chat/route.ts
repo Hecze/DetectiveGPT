@@ -2,26 +2,18 @@ import { openai } from '@ai-sdk/openai';
 import { generateText, generateObject, tool, CoreMessage } from 'ai';
 import { z } from 'zod';
 import { NextResponse } from 'next/server';
+import { AgentResponse, agentResponseSchema } from '../../../types/agentResponse'; // Asegúrate de ajustar la ruta según la ubicación de types.ts
 
-interface AgentResponse {
-  name: string;
-  message: string;
-  gameOver: boolean;
-}
+// Allow streaming responses up to 30 seconds
+export const maxDuration = 60;
+
 
 export async function POST(req: Request) {
   try {
-    const { messages, currentAgent: lastCurrentAgent } = await req.json();
-    const agentResponse = await speakWithAgent(lastCurrentAgent, messages[lastCurrentAgent]);
-    const { message, gameOver, name: currentAgent } = agentResponse;
-    let formattedResponse = { paragraph: message, option1: 'Continuar', option2: '', option3: '' }
+    const { messages, currentAgent: currentAgent } = await req.json();
+    const agentResponse = await speakWithAgent(currentAgent, messages[currentAgent]);
 
-    if (lastCurrentAgent === 'storyteller') {
-      //Solo darle un formato Json a la respuesta si se está hablando con el historyteller
-      formattedResponse = await textToJson(message);
-    }
-
-    return NextResponse.json({ agentResponse: message, formattedResponse, currentAgent, gameOver }, { status: 200 });
+    return NextResponse.json(agentResponse, { status: 200 });
 
   } catch (error) {
     console.log(error);
@@ -31,7 +23,6 @@ export async function POST(req: Request) {
     );
   }
 }
-
 
 async function textToJson(text: string) {
   const { object } = await generateObject({
@@ -51,7 +42,6 @@ async function textToJson(text: string) {
 }
 
 async function speakWithAgent(name: string, messages: CoreMessage[]): Promise<AgentResponse> {
-  //console.log("function speakWithAgent called", `name: ${name}`, `messages: ${JSON.stringify(messages)}`);
   console.log(`\nFunction speakWithAgent  ----------------------------------------------------------------------------------------------------------------- \n\n  Name: ${name}`, `\n  N° Messages: ${messages.length}`);
   let currentAgent = name.toLowerCase();
   let messageAgent = '';
@@ -72,26 +62,45 @@ async function speakWithAgent(name: string, messages: CoreMessage[]): Promise<Ag
           ({ messageAgent, gameOver, currentAgent } = await handleEndConversation(cause, resume, name));
         },
       }),
+      changeAgent: tool({
+        description: 'Se ejecuta cuando se quiere cambiar de agente',
+        parameters: z.object({
+          newAgent: z.string().describe('Nombre del nuevo agente.'),
+        }),
+        execute: async ({ newAgent }) => {
+          currentAgent = newAgent;
+        },
+      }),
     },
   });
 
-
   if (!gameOver) {
-    //Se sigue hablando con el npc
     messageAgent = result.text;
   }
 
+  const formattedResponse = currentAgent === 'storyteller' ? await textToJson(messageAgent) : {
+    paragraph: messageAgent,
+    option1: 'Continuar',
+    option2: '',
+    option3: ''
+  };
+
   const agentResponse: AgentResponse = {
     name: currentAgent,
-    message: messageAgent,
-    gameOver,
+    content: {
+      text: messageAgent,
+      formatted: formattedResponse
+    },
+    tools: {
+      gameOver: { executed: gameOver },
+      changeAgent: { executed:  false, newAgent: currentAgent }
+    }
   };
 
   console.log('  agentResponse: ', agentResponse);
   console.log(`\n------------------------------------------------------------------------------------------------------------------------------------------`)
   return agentResponse;
 }
-
 
 async function handleEndConversation(cause: "muerte" | "crimen resuelto" | "despedida", resume: string, name: string) {
   let messageAgent = `Anotas todo lo conversado con ${name} en tu libreta: ${resume}.`;
@@ -104,8 +113,7 @@ async function handleEndConversation(cause: "muerte" | "crimen resuelto" | "desp
   } else if (cause === 'crimen resuelto') {
     messageAgent = `    El investigador ha resuelto el crimen. ${resume}`;
     gameOver = true;
-  }
-  else {
+  } else {
     messageAgent = `    Anotados toco lo conversado con ${name} en tu libreta: ${resume}`;
   }
 
