@@ -120,11 +120,11 @@ export const createAgent = ({
   forgerPrompt,
   adjustmentPrompt,
 }: CreateAgentContextParams): void => {
-  if (agentName in agentContextPool) {
+  if (agentName.toString().toLowerCase() in agentContextPool) {
     throw new Error('Agent already exists');
   }
-  initializeAgentContext({ agentName, forgerPrompt, adjustmentPrompt });
-  if (!agentContextPool[agentName]) {
+  initializeAgentContext({ agentName: agentName.toString().toLowerCase(), forgerPrompt, adjustmentPrompt });
+  if (!agentContextPool[agentName.toString().toLowerCase()]) {
     throw new Error('Agent creation failed');
   }
   // console.log(JSON.stringify(agentContextPool[agentName]));

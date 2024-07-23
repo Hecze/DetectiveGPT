@@ -208,17 +208,21 @@ export default function StorytellerFlow({
       }
   
       // Actualizar estados
-      console.log("Formatted response: ", agentReplyFormatted);
-      setFormattedResponse(agentReplyFormatted);
-      console.log("Assistant response: ", agentReplyText);
-      setAssistantResponse(agentReplyText);
+
       if (agentChanged) {
         console.log('El nuevo agente es: ' + newAgentName);
         setCurrentAgent(newAgentName as string);
+        createAgent({agentName: newAgentName, forgerPrompt: `Eres ${newAgentName}, un personaje secundario en una novela de misterio. Hablas directamente con el investigador del crimen.`, adjustmentPrompt : "Habla en primera persona, Ten personalidad, no seas tan servicial"});
+        
+        //aca deberia hacer otra peticion a la api para que el agentesea el primero en hablar
       }
       else {
         setCurrentAgent(agentName as string);
       }
+      console.log("Formatted response: ", agentReplyFormatted);
+      setFormattedResponse(agentReplyFormatted);
+      console.log("Assistant response: ", agentReplyText);
+      setAssistantResponse(agentReplyText);
     } catch (error) {
       // Manejo de errores
       setFormattedResponse({
