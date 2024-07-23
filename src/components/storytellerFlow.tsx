@@ -20,7 +20,7 @@ type Voice = {
 };
 
 
-export default function StorytellerFlow() {
+export default function StorytellerFlow({investigatorPersonalities, storySubcategory}: { investigatorPersonalities: any, storySubcategory: string }) {
     const audioRef = useRef<HTMLAudioElement>(null);
     const [isAudioPlaying, setIsAudioPlaying] = useState(false);
     const [currentAgent, setCurrentAgent] = useState("storyteller");
@@ -42,6 +42,8 @@ export default function StorytellerFlow() {
     const [storySummary, setStorySummary] = useState<string>('')
 
     useEffect(() => {
+        console.log("Investigator personalities", investigatorPersonalities);
+        console.log("Story subcategories", storySubcategory);
         const speechInstance = new Speech();
         speechInstance.init({
             volume: 0.5,
