@@ -48,23 +48,6 @@ async function getAgentResponse(newCurrentAgent: string, messages: any): Promise
   }
 }
 
-function createGameOverResponse(message: string) {
-  console.log('Game over');
-  return NextResponse.json(
-    {
-      gameOver: true,
-      agentResponse: message,
-      formattedResponse: {
-        paragraph: message,
-        option1: '',
-        option2: '',
-        option3: '',
-      },
-      currentAgent: 'storyteller',
-    },
-    { status: 200 }
-  );
-}
 
 function createJsonResponse({ message, formattedResponse, currentAgent, gameOver }: any) {
   return NextResponse.json(
