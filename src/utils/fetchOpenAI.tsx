@@ -31,7 +31,7 @@ export async function fetchOpenAI(agentContextManager: AgentContextManager, curr
 
     const data = await response.json() as AgentResponse; 
 
-    console.log('Received data:', data);
+    // console.log('Received data:', data);
     // Validar la estructura de los datos con zod
     const result = agentResponseSchema.safeParse(data);
     if (result.success) {

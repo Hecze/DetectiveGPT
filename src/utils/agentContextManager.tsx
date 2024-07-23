@@ -73,9 +73,10 @@ let agentContextPool: AgentContextPool = {};
  * @param {AddMessageParams} params - The parameters for adding a message.
  */
 const addMessageToAgentContext = ({ agentName, content, role }: AddMessageParams): void => {
+  // console.log('Adding message to agent context:', agentName, content, role);
   agentContextPool = {
     ...agentContextPool,
-    [agentName]: [...(agentContextPool[agentName] || []), { role, content }],
+    [agentName.toString().toLowerCase()]: [...(agentContextPool[agentName.toString().toLowerCase()] || [] as CoreMessage[]), { role, content }],
   };
 };
 
@@ -123,6 +124,12 @@ export const createAgent = ({
     throw new Error('Agent already exists');
   }
   initializeAgentContext({ agentName, forgerPrompt, adjustmentPrompt });
+  if (!agentContextPool[agentName]) {
+    throw new Error('Agent creation failed');
+  }
+  // console.log(JSON.stringify(agentContextPool[agentName]));
+  // console.log(`Agent ${agentName} created successfully`);
+
 };
 
 /**
@@ -172,15 +179,19 @@ export const createAgent = ({
  * console.log(reply.tools.gameOver.executed); // false
  */
 export const getAgentReply = async ({ agentName, content }: GetAgentReplyParams): Promise<AgentResponse> => {
+  // console.log(agentName)
+  // console.log(content)
   addMessageToAgentContext({ agentName, content, role: 'user' });
+  const response = await fetchOpenAI(agentContextPool, agentName.toString().toLowerCase());
 
-  const response = await fetchOpenAI(agentContextPool, agentName as string);
+  console.log("agregando mensaje en rol assistant al agente: " + agentName.toString().toLowerCase() + ": " + content);
 
   addMessageToAgentContext({
-    agentName: response.name,
+    agentName,
     content: response.content.text,
     role: 'assistant',
   });
+  // console.log("agentContextPool: " + JSON.stringify(agentContextPool));
 
   return response;
 };
@@ -196,6 +207,7 @@ export const getAgentReply = async ({ agentName, content }: GetAgentReplyParams)
  */
 export const getMessages = (agentName: keyof AgentContextPool): CoreMessage[] => {
   if (!(agentName in agentContextPool)) {
+    console.log("agentContextPool: " + JSON.stringify(agentContextPool));
     throw new Error(`Agent "${agentName}" does not exist.`);
   }
 
@@ -235,11 +247,11 @@ export const createStorySummary = async () => {
     (accumulator, currentValue) => accumulator + `${currentValue.role}: ${currentValue.content}\n`,
     initialValue
   );
-  if(sumWithInitial.length > 500){ 
+  if (sumWithInitial.length > 800) {
     const storySummary = await resumeStory(sumWithInitial);
-    return storySummary; 
+    return storySummary;
   }
-  else{
+  else {
     return "Error: Historia demasiado corta: " + sumWithInitial;
   }
 };

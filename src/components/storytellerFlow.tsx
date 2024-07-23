@@ -94,7 +94,7 @@ export default function StorytellerFlow({
         pitch: 1,
         listeners: {
           onvoiceschanged: (voices: any) => {
-            console.log('Voices changed', voices);
+            // console.log('Voices changed', voices);
             const formattedVoices: Voice[] = voices.map(
               (voice: SpeechSynthesisVoice) => ({
                 name: voice.name,
@@ -116,7 +116,7 @@ export default function StorytellerFlow({
         },
       })
       .then((data) => {
-        console.log('Speech is ready', data);
+        // console.log('Speech is ready', data);
         setSpeech(speechInstance);
       })
       .catch((e) => {
@@ -208,11 +208,16 @@ export default function StorytellerFlow({
       }
   
       // Actualizar estados
+      console.log("Formatted response: ", agentReplyFormatted);
       setFormattedResponse(agentReplyFormatted);
+      console.log("Assistant response: ", agentReplyText);
       setAssistantResponse(agentReplyText);
       if (agentChanged) {
         console.log('El nuevo agente es: ' + newAgentName);
         setCurrentAgent(newAgentName as string);
+      }
+      else {
+        setCurrentAgent(agentName as string);
       }
     } catch (error) {
       // Manejo de errores
