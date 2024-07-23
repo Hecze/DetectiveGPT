@@ -1,19 +1,15 @@
-"use client";
-import InitialSettings from "@/components/initialSettings";
-import StorytellerFlow from "@/components/storytellerFlow";
-import Image from "next/image";
-import { useState } from "react";
+'use client';
+import InitialSettings from '@/components/initialSettings';
+import StorytellerFlow from '@/components/storytellerFlow';
+import Image from 'next/image';
+import { useState } from 'react';
 
 export default function Home() {
   const [gameIsStarted, setGameIsStarted] = useState(false);
   const [selectedPersonalities, setSelectedPersonalities] = useState([]);
-  const [selectedSubcategory, setSelectedSubcategory] =
-    useState("Sobrenatural");
+  const [selectedSubcategory, setSelectedSubcategory] = useState('Sobrenatural');
 
-  const handleStartGame = (
-    selectedPersonalities: any,
-    selectedSubcategory: string
-  ) => {
+  const handleStartGame = (selectedPersonalities: any, selectedSubcategory: string) => {
     setSelectedPersonalities(selectedPersonalities);
     setSelectedSubcategory(selectedSubcategory);
     setGameIsStarted(true);
@@ -23,10 +19,9 @@ export default function Home() {
       <>
         {!gameIsStarted ? (
           <InitialSettings
-            handleStartGame={(
-              selectedPersonalities: any,
-              selectedSubcategory: string
-            ) => handleStartGame(selectedPersonalities, selectedSubcategory)}
+            handleStartGame={(selectedPersonalities: any, selectedSubcategory: string) =>
+              handleStartGame(selectedPersonalities, selectedSubcategory)
+            }
           />
         ) : (
           <>
