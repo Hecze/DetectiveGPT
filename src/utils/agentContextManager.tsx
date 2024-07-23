@@ -195,7 +195,7 @@ export const createStorySummary = async () => {
     (accumulator, currentValue) => accumulator + `${currentValue.role}: ${currentValue.content}\n`,
     initialValue
   );
-  if(sumWithInitial.length > 2000){ 
+  if(sumWithInitial.length > 500){ 
     const storySummary = await resumeStory(sumWithInitial);
     console.log(storySummary);
     return storySummary; 

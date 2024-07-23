@@ -19,18 +19,14 @@ export async function POST(req: Request) {
 
     const { message, gameOver, name: currentAgent } = agentResponse;
 
-    if (gameOver) {
-      return createGameOverResponse(message);
-    }
-
-    if (currentAgent === 'storyteller') {
+    if (newCurrentAgent === 'storyteller') {
       const formattedResponse = await textToJson(message);
       return createJsonResponse({ message, formattedResponse, currentAgent, gameOver });
     }
 
     return createJsonResponse({
       message,
-      formattedResponse: { paragraph: message, option1: '', option2: '', option3: '' },
+      formattedResponse: { paragraph: message, option1: 'Continuar', option2: '', option3: '' },
       currentAgent,
       gameOver,
     });
@@ -108,7 +104,7 @@ async function speakWithNpc(name: string, messages: CoreMessage[], prompt?: stri
 
   const result = await generateText({
     model: openai('gpt-4o-mini'),
-    system: `Maximo 150 caracteres. Eres un personaje seuncario en una novela de misterio. Tu nombre es ${name}. Habla en primera persona. Le hablas al investigador. ${prompt}`,
+    system: `Maximo 150 caracteres. Eres un personaje secuncario en una novela de misterio. Tu nombre es ${name}. Habla en primera persona. Estas hablando con el investigador del caso. ${prompt}`,
     messages: messages,
     maxTokens: 200,
     tools: {
@@ -141,7 +137,7 @@ async function speakWithNpc(name: string, messages: CoreMessage[], prompt?: stri
 
 
 async function handleEndConversation(cause: string, resume: string, name: string) {
-  let messageAgent = `Anotas todo lo conversado con ${name} en tu libreta: ${resume}. opcion1: continuar`;
+  let messageAgent = `Anotas todo lo conversado con ${name} en tu libreta: ${resume}.`;
   console.log(`handleEndConversation -> messageAgent: ${messageAgent}`);
   let gameOver = false;
 
@@ -170,7 +166,7 @@ async function speakWithStoryteller(messages: any): Promise<AgentResponse> {
   console.log("speakWithStoryteller -> lastMessage: ", lastMessage);
   if (lastMessage && lastMessage.content.includes("Hablar con")) {
     toolChoiceConfiguration = "required";
-    console.log("Toll is required")
+    console.log("Tool is required")
   }
 
   const result = await generateText({
@@ -186,6 +182,7 @@ async function speakWithStoryteller(messages: any): Promise<AgentResponse> {
         }),
         execute: async ({ reasonOfDead }) => {
           ({ messageAgent, gameOver, currentAgent } = await handleInvestigatorIsDead(reasonOfDead));
+          console.log(`Generate Text -> tool InvestigatorIsDead invoked -> ${messageAgent}`);
         }
       }),
       solvedCase: tool({
@@ -217,9 +214,13 @@ async function speakWithStoryteller(messages: any): Promise<AgentResponse> {
     },
   });
 
-  if (currentAgent === 'storyteller') {
+  if (currentAgent === 'storyteller' && !gameOver) {
+    //La partida sigue en curso y se está hablando con el storyteller
     messageAgent = result.text;
   }
+
+  console.log(`Generate Text -> ${messageAgent}`);
+
 
   const agentResponse: AgentResponse = {
     name: currentAgent,
@@ -227,7 +228,7 @@ async function speakWithStoryteller(messages: any): Promise<AgentResponse> {
     gameOver,
   };
 
-  console.log('agentResponse: ', agentResponse);
+  console.log('speak with storyteller -> agentResponse: ', agentResponse);
   return agentResponse;
 }
 
