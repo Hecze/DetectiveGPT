@@ -137,7 +137,7 @@ export const getAgentReply = async ({ agentName, content }: GetAgentReplyParams)
   console.log('After adding user message:', agentContextPool);
 
   // Call the API to get the agent's reply
-  const response = await fetchOpenAI(agentContextPool);
+  const response = await fetchOpenAI(agentContextPool, agentName as string);
   console.log('API response:', response);
 
   // Add the assistant's response to the agent's context
@@ -195,9 +195,15 @@ export const createStorySummary = async () => {
     (accumulator, currentValue) => accumulator + `${currentValue.role}: ${currentValue.content}\n`,
     initialValue
   );
-  const storySummary = await resumeStory(sumWithInitial);
-  console.log(storySummary);
-  return storySummary;
+  if(sumWithInitial.length > 2000){ 
+    const storySummary = await resumeStory(sumWithInitial);
+    console.log(storySummary);
+    return storySummary; 
+  }
+  else{
+    return "Error: Historia demasiado corta: " + sumWithInitial;
+  }
+
 };
 
 // Export the agent context pool and other functions if necessary

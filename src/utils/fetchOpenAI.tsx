@@ -49,14 +49,14 @@ type OpenaiResponse = z.infer<typeof openaiResponseSchema>;
  *
  * @throws {Error} - Throws an error if the response structure is invalid or if the HTTP request fails.
  */
-export async function fetchOpenAI(agentContextManager: AgentContextManager): Promise<OpenaiResponse> {
+export async function fetchOpenAI(agentContextManager: AgentContextManager, currentAgent: string): Promise<OpenaiResponse> {
   try {
     const response = await fetch('/api/chat', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ messages: agentContextManager }),
+      body: JSON.stringify({ messages: agentContextManager, currentAgent: currentAgent }),
     });
 
     if (!response.ok) {
