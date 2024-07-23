@@ -6,7 +6,8 @@ import { IoSendSharp } from "react-icons/io5";
 import Option from "./option";
 import { CoreAssistantMessage, CoreMessage, CoreSystemMessage, CoreUserMessage } from "ai";
 import Endgame from "./endgame";
-import { getAgentReply, createStorySummary } from "@/utils/agentContextManager";
+import { createAgent, getAgentReply, createStorySummary } from "@/utils/agentContextManager";
+import { agentPrompts } from '@/utils/agentPrompts';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 30;
@@ -40,10 +41,30 @@ export default function StorytellerFlow({investigatorPersonalities, storySubcate
     const [inputValue, setInputValue] = useState<string>('');
     const [epilogue, setEpilogue] = useState<string>('')
     const [storySummary, setStorySummary] = useState<string>('')
+    const createStorytellerAgent = () => {
+        try {
+            const prompts = agentPrompts['storyteller'];
+            if (!prompts) {
+                throw new Error('Prompts for storyteller agent not found');
+            }
+
+            createAgent({
+                agentName: 'storyteller',
+                forgerPrompt: prompts.forgerPrompt,
+                adjustmentPrompt: prompts.adjustmentPrompt
+            });
+
+            console.log('Storyteller agent created successfully.');
+        } catch (error) {
+            console.error('Error creating storyteller agent:', error);
+        }
+    };
 
     useEffect(() => {
         console.log("Investigator personalities", investigatorPersonalities);
         console.log("Story subcategories", storySubcategory);
+        // Call the function to create the agent
+        createStorytellerAgent();
         const speechInstance = new Speech();
         speechInstance.init({
             volume: 0.5,
@@ -121,14 +142,14 @@ export default function StorytellerFlow({investigatorPersonalities, storySubcate
         setInputValue("");
         try {
             // Obtener la respuesta del asistente
-            let { currentAgent: nextAgent, formattedResponse, agentResponse, gameOver: agentGameOver } = await getAgentReply({ agent: currentAgent, content: userMessage });
+            let { currentAgent: nextAgent, formattedResponse, agentResponse, gameOver: agentGameOver } = await getAgentReply({ agentName: currentAgent, content: userMessage });
 
             console.log("Le hablamos al agente: " + currentAgent);
             console.log("Nos responde el agente: " + nextAgent);
             console.log("La respuesta del agente es: " + agentResponse);
-            
+
             // if(formattedResponse.option1 === "" && formattedResponse.option2 === "" && formattedResponse.option3 === "" && nextAgent === "storyteller") {
-            if(agentGameOver) {
+            if (agentGameOver) {
                 // Si no hay opciones, establecer el final del juego
                 setEpilogue(agentResponse);
                 setStorySummary(await createStorySummary());

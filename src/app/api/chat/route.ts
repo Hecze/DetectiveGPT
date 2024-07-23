@@ -36,42 +36,42 @@ export async function POST(req: Request) {
         investigatorIsDead: tool({
           //Cuando llamar a la tool
           description: 'Se ejecuta cuando el investigador muere',
-          parameters: z.object({reasonOfDead: z.string().describe('Razón de la muerte')}),
+          parameters: z.object({ reasonOfDead: z.string().describe('Razón de la muerte') }),
           //Funcion que se ejecuta cuando se llama a la tool
           execute: async ({ reasonOfDead }) => {
             console.log("Game over");
-            console.log("Razón de la muerte: " + reasonOfDead );
+            console.log("Razón de la muerte: " + reasonOfDead);
             gameOver = true;
-            messageAgent = "Razón de la muerte: " + reasonOfDead ;
+            messageAgent = "Razón de la muerte: " + reasonOfDead;
             return {};
           }
         }),
         solvedCase: tool({
           //Cuando llamar a la tool
           description: 'Se ejecuta cuando el investigador resuelve el caso',
-          parameters: z.object({epilogue: z.string().describe('Epilogo de la historia. Futuro de los personajes despues de que el investigador resuelva el caso.')}),
+          parameters: z.object({ epilogue: z.string().describe('Epilogo de la historia. Futuro de los personajes despues de que el investigador resuelva el caso.') }),
           //Funcion que se ejecuta cuando se llama a la tool
-          execute: async ({  epilogue }) => {
+          execute: async ({ epilogue }) => {
             console.log("Game over");
-            console.log("epilogue: " + epilogue );
+            console.log("epilogue: " + epilogue);
             gameOver = true;
-            messageAgent = epilogue ;
+            messageAgent = epilogue;
             return {};
           }
         }),
 
         speakWithNpc: tool({
           //Cuando llamar a la tool
-          description: 'El jugador desea hablar con un personaje especifico',
+          description: 'se ejecuta cuando el jugador dice "Hablar con [personaje]"',
           parameters: z.object({
-            name: z.string().describe('El nombre del personaje. Puede ser esther o hector, etc. nunca usar nombres con tilde'),
+            name: z.string().describe('Nombre del personaje. nunca usar nombres con tilde'),
             prompt: z.string().describe('Caracteristicas del persona y su rol en la historia. por ejemplo: "eres hector, una chico pescador que vive en la esquina. eras amigo de la victima llamada William"'),
           }),
           //Funcion que se ejecuta cuando se llama a la tool
           execute: async ({ name, prompt }) => {
             console.log("speakingWithNpc");
             console.log("name: " + name, "\nprompt: " + prompt);
-            const agentResponse: AgentResponse = await speakWithNpc(name, prompt, messages[name.toLowerCase()] ? messages[name.toLowerCase()] as CoreMessage[]: [] as CoreMessage[]);
+            const agentResponse: AgentResponse = await speakWithNpc(name, prompt, messages[name.toLowerCase()] ? messages[name.toLowerCase()] as CoreMessage[] : [] as CoreMessage[]);
             currentAgent = agentResponse.name;
             messageAgent = agentResponse.message;
             gameOver = agentResponse.gameOver;
@@ -89,7 +89,7 @@ export async function POST(req: Request) {
       console.log("Game over");
       const response = NextResponse.json({ gameOver: true, agentResponse: messageAgent, formattedResponse: { paragraph: messageAgent, option1: "", option2: "", option3: "" }, currentAgent: "storyteller" }, { status: 200 });
       console.log(response)
-      return response 
+      return response
     }
 
     //El mensaje de respuesta es del storyteller
@@ -165,71 +165,51 @@ async function speakWithNpc(name: string, prompt: string, messages: CoreMessage[
   let messageAgent = "";
   let resumeOfAllConversation = "";
   let gameOver = false;
+  // Define los valores permitidos para 'cause'
 
   const result = await generateText({
     model: openai('gpt-4o-mini'),
-    system: `Maximo 150 caracteres. Eres un personaje en una novela de misterio. Tu nombre es ${name}. Habla en primera persona. No eres el investigador. ${prompt}`,
+    system: `Maximo 150 caracteres. Eres un personaje en una novela de misterio. Tu nombre es ${name}. Habla en primera persona. Le hablas al investigador. ${prompt}`,
     messages: messages,
     maxTokens: 200,
     tools: {
       endConversation: tool({
         //Cuando llamar a la tool
-        description: 'Se ejecuta cuando el usuario se despide de ' + name,
-        parameters: z.object({ resume: z.string().describe('Resumen detallado de la informacion recaudada') }),
+        description: 'Se ejecuta cuando termina la conversación, ya sea porque el investigador muere, resuelve el caso o se despide de ti ' + name,
+        parameters: z.object({ cause: z.enum(['muerte', 'crimen resuelto', 'despedida']).describe('Motivo del final de la conversación: muerte, crimen resuelto o despedida'), resume: z.string().describe('Resumen detallado de la informacion recaudada') }),
         //Funcion que se ejecuta cuando se llama a la tool
-        execute: async ({ resume }) => {
+        execute: async ({ cause, resume }) => {
           console.log("Anotas todo lo conversado con " + name + " en tu libreta: " + resume);
-          currentAgent = "storyteller";
+          if (cause.includes("muerte")) {
+            messageAgent = "El investigador ha muerto. " + resume;
+            gameOver = true;
+          }
+          else if (cause.includes("crimen resuelto")) {
+            messageAgent = "El investigador ha resuelto el crimen. " + resume;
+            gameOver = true;
+          }
+          else if (cause.includes("despedida")) {
+            messageAgent = "Anotas todo lo conversado con " + name + " en tu libreta: " + resume;
+            gameOver = false;
+          }
           //mensaje que se le pasará al storyteller
-          resumeOfAllConversation = resume;
+          else {
+            //la ia ha devuelto un parametro inesperado
+            messageAgent = resume;
+            console.log("La ia ha devuelto un parametro inesperado: " + cause + "\n. Parametro esperado: muerte, crimen resuelto o se despedida");
+          }
+          currentAgent = "storyteller";
           return
         }
       }),
-      investigatorIsDead: tool({
-        //Cuando llamar a la tool
-        description: 'Se ejecuta cuando el investigador muere',
-        parameters: z.object({
-          reasonOfDead: z.string().describe('Razón de la muerte'),
-          epilogue: z.string().describe('Epilogo de la historia. Futuro de los personajes despues de que el investigador resuelva el caso.')
-        }),
-        //Funcion que se ejecuta cuando se llama a la tool
-        execute: async ({ epilogue, reasonOfDead }) => {
-          console.log("Game over");
-          console.log("Epilogo: " + epilogue)
-          console.log("Razón de la muerte: " + reasonOfDead );
-          gameOver = true;
-          // messageAgent = "Razón de la muerte: " + reasonOfDead ;
-          messageAgent = epilogue
-          return {};
-        }
-      }),
-      solvedCase: tool({
-        //Cuando llamar a la tool
-        description: 'Se ejecuta cuando el investigador resuelve el caso',
-        parameters: z.object({epilogue: z.string().describe('Epilogo de la historia. Futuro de los personajes despues de que el investigador resuelva el caso.')}),
-        //Funcion que se ejecuta cuando se llama a la tool
-        execute: async ({  epilogue }) => {
-          console.log("Game over");
-          console.log("epilogue: " + epilogue );
-          gameOver = true;
-          messageAgent = epilogue ;
-          return {};
-        }
-      }),
-
     }
   });
 
-  if (!gameOver) {
-    if (currentAgent !== "storyteller") {
-      messageAgent = result.text;
-    }
-    else {
-      console.log("Se ha terminado la conversación con " + name + ". El resumen es: " + resumeOfAllConversation);
-      messageAgent = `Anotas todo lo conversado con ${name} en tu libreta: ${resumeOfAllConversation} \n `;
-    }
+  if (!gameOver && currentAgent !== "storyteller") {
+    messageAgent = result.text;
   }
-  
+
+
 
   const agentResponse: AgentResponse = { name: currentAgent, message: messageAgent, gameOver: gameOver };
   console.log("agentResponse: " + JSON.stringify(agentResponse))

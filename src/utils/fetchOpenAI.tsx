@@ -3,7 +3,6 @@ import { z } from 'zod';
 
 // AgentContextManager se encarga de la gestión del contexto para todos los agentes involucrados
 interface AgentContextManager {
-    storyteller: CoreMessage[];
     [key: string]: CoreMessage[]; // Claves adicionales con CoreMessage[]
 }
 
