@@ -3,9 +3,6 @@ import { generateText, generateObject, tool, CoreMessage } from 'ai';
 import { z } from 'zod';
 import { NextResponse } from 'next/server';
 
-// Allow streaming responses up to 30 seconds
-export const maxDuration = 60;
-
 interface AgentResponse {
   name: string;
   message: string;
@@ -15,7 +12,7 @@ interface AgentResponse {
 export async function POST(req: Request) {
   try {
     const { messages, currentAgent: lastCurrentAgent } = await req.json();
-    const agentResponse = await speakWithNpc(lastCurrentAgent, messages[lastCurrentAgent]);
+    const agentResponse = await speakWithAgent(lastCurrentAgent, messages[lastCurrentAgent]);
     const { message, gameOver, name: currentAgent } = agentResponse;
     let formattedResponse = { paragraph: message, option1: 'Continuar', option2: '', option3: '' }
 
@@ -53,9 +50,9 @@ async function textToJson(text: string) {
   return object;
 }
 
-async function speakWithNpc(name: string, messages: CoreMessage[]): Promise<AgentResponse> {
-  //console.log("function speakWithNpc called", `name: ${name}`, `messages: ${JSON.stringify(messages)}`);
-  console.log(`\nFunction speakWithNpc  -------------------------------------------------------------------------------------------------------------------- \n\n  Name: ${name}`, `\n  N° Messages: ${messages.length}`);
+async function speakWithAgent(name: string, messages: CoreMessage[]): Promise<AgentResponse> {
+  //console.log("function speakWithAgent called", `name: ${name}`, `messages: ${JSON.stringify(messages)}`);
+  console.log(`\nFunction speakWithAgent  ----------------------------------------------------------------------------------------------------------------- \n\n  Name: ${name}`, `\n  N° Messages: ${messages.length}`);
   let currentAgent = name.toLowerCase();
   let messageAgent = '';
   let gameOver = false;

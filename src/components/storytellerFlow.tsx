@@ -25,7 +25,6 @@ import {
 import { agentPrompts } from '@/utils/agentPrompts';
 
 export const dynamic = 'force-dynamic';
-export const maxDuration = 30;
 
 type Voice = {
   name: string;
