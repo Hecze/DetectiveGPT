@@ -45,10 +45,10 @@ export default function InitialSettings({ handleStartGame }: { handleStartGame: 
   };
 
   return (
-    <div className="text-white bg-[#18130F] w-1/2 m-auto flex flex-col items-center">
+    <div className="text-white bg-[#18130F] m-auto flex flex-col items-center p-3 pb-5">
       <img width="200" height="200" src="logo.png" />
       <div className="mb-4 text-center">
-        <p className="text-2xl">Elige la personalidad del detective</p>
+        <p className="text-2xl pt-3">Elige la personalidad del detective</p>
         {availablePersonalities.map((personality) => (
           <PersonalitySlider
             key={personality.tag}
@@ -58,7 +58,7 @@ export default function InitialSettings({ handleStartGame }: { handleStartGame: 
           />
         ))}
       </div>
-      <p className="text-2xl">Elige la trama de la historia</p>
+      <p className="text-2xl pt-10 pb-5">Elige la trama de la historia</p>
       <div className="flex flex-wrap align-middle gap-3 items-center justify-center">
         {availableSubcategories.map((subcategory) => (
           <Button key={subcategory} size="lg" onClick={() => handleSubcategorySelection(subcategory)}>
