@@ -14,12 +14,12 @@ interface AgentResponse {
 
 export async function POST(req: Request) {
   try {
-    const { messages, currentAgent: newCurrentAgent } = await req.json();
-    const agentResponse = await getAgentResponse(newCurrentAgent, messages);
+    const { messages, currentAgent: lastCurrentAgent } = await req.json();
+    const agentResponse = await getAgentResponse(lastCurrentAgent, messages);
 
     const { message, gameOver, name: currentAgent } = agentResponse;
 
-    if (newCurrentAgent === 'storyteller') {
+    if (lastCurrentAgent === 'storyteller') {
       const formattedResponse = await textToJson(message);
       return createJsonResponse({ message, formattedResponse, currentAgent, gameOver });
     }
@@ -40,11 +40,11 @@ export async function POST(req: Request) {
   }
 }
 
-async function getAgentResponse(newCurrentAgent: string, messages: any): Promise<AgentResponse> {
-  if (newCurrentAgent === "storyteller") {
+async function getAgentResponse(lastCurrentAgent: string, messages: any): Promise<AgentResponse> {
+  if (lastCurrentAgent === "storyteller") {
     return await speakWithStoryteller(messages);
   } else {
-    return await speakWithNpc(newCurrentAgent, messages[newCurrentAgent]);
+    return await speakWithNpc(lastCurrentAgent, messages[lastCurrentAgent]);
   }
 }
 
