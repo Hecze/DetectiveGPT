@@ -22,6 +22,7 @@ import {
   createAgent,
   getAgentReply,
   createStorySummary,
+  addMessageToAgentContext,
 } from '@/utils/agentContextManager';
 import { agentPrompts } from '@/utils/agentPrompts';
 
@@ -193,7 +194,7 @@ export default function StorytellerFlow({
         },
         tools: {
           gameOver: { executed: isGameOver },
-          changeAgent: { executed: agentChanged, newAgent: newAgentName }
+          changeAgent: { executed: agentChanged, newAgent: newAgentName, prompt: agentPrompt },
         }
       } = response;
 
@@ -211,13 +212,13 @@ export default function StorytellerFlow({
 
       if (agentChanged) {
         console.log('El nuevo agente es: ' + newAgentName);
-        createAgent({ agentName: newAgentName, forgerPrompt: `Eres ${newAgentName}, un personaje secundario en una novela de misterio. Hablas directamente con el investigador del crimen.`, adjustmentPrompt: "Habla en primera persona, Ten personalidad, no seas tan servicial" });
-
+        createAgent({ agentName: newAgentName, forgerPrompt: `Eres ${newAgentName}, un personaje secundario en una novela de misterio de trama realista. No tengas una personalidad exagerada. Responde textos cortos.Hablas directamente con el investigador del crimen.`, adjustmentPrompt: `Habla en priemra persona. ${agentPrompt}` });
+        addMessageToAgentContext({agentName, content:`*Este es un mensaje que se agrega automaticamente cada que se agrega un nuevo personaje. Nuevo Personaje agregado a la trama:\n  nombre:${newAgentName}\n  definicion:${agentPrompt} *`, role:"user"});
         const response = await getAgentReply({
           agentName: newAgentName,
           content: "",
         })
-
+        console.log(agentPrompt)
         agentReplyText = response.content.text;
         agentReplyFormatted = response.content.formatted;
         setCurrentAgent(newAgentName as string);

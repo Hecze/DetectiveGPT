@@ -19,6 +19,7 @@ export const agentResponseSchema = z.object({
     changeAgent: z.object({
       executed: z.boolean(),
       newAgent: z.string(),
+      prompt: z.string(),
     }),
   }),
 });
@@ -44,4 +45,5 @@ export type AgentResponse = z.infer<typeof agentResponseSchema>;
  * @property {Object} tools.changeAgent - Indicates if the agent has been changed.
  * @property {boolean} tools.changeAgent.executed - True if the agent was changed.
  * @property {string} [tools.changeAgent.newAgent] - The name of the new agent, if applicable.
+ * @property {string} [tools.changeAgent.prompt] - The prompt for the new agent, if applicable.
  */

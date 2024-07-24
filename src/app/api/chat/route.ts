@@ -45,7 +45,7 @@ async function textToJson(text: string) {
 async function speakWithAgent(name: string, messages: CoreMessage[]): Promise<AgentResponse> {
   console.log(`\nFunction speakWithAgent  ----------------------------------------------------------------------------------------------------------------- \n\n  Name: ${name}`, `\n  N° Messages: ${messages.length}`);
   let currentAgent = name.toLowerCase();
-  let changeAgent = { executed: false, newAgent: '' };
+  let changeAgent = { executed: false, newAgent: '', prompt: '' };
   let messageAgent = '';
   let gameOver = false;
   let toolChoiceConfiguration: "auto" | "required" | "none" = "auto";
@@ -76,10 +76,11 @@ async function speakWithAgent(name: string, messages: CoreMessage[]): Promise<Ag
         description: 'Se ejecuta cuando el usuario dice : "Hablar con [nombre del agente]". por ejemplo "Hablar con German"',
         parameters: z.object({
           newAgent: z.string().describe('Nombre del nuevo agente.'),
+          prompt: z.string().describe('Descripcion larga y detallada de la personalidad y papel en la trama del nuevo agente.'),
         }),
-        execute: async ({ newAgent }) => {
+        execute: async ({ newAgent, prompt }) => {
           console.log('    changeAgent tool executed --> newAgent: '+ newAgent);
-          changeAgent = { executed: true, newAgent: newAgent };
+          changeAgent = { executed: true, newAgent: newAgent, prompt: prompt };
         },
       }),
     },

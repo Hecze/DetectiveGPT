@@ -72,7 +72,7 @@ let agentContextPool: AgentContextPool = {};
  * 
  * @param {AddMessageParams} params - The parameters for adding a message.
  */
-const addMessageToAgentContext = ({ agentName, content, role }: AddMessageParams): void => {
+export const addMessageToAgentContext = ({ agentName, content, role }: AddMessageParams): void => {
   // console.log('Adding message to agent context:', agentName, content, role);
   agentContextPool = {
     ...agentContextPool,
