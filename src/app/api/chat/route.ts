@@ -52,7 +52,7 @@ async function speakWithAgent(name: string, messages: CoreMessage[]): Promise<Ag
   const lastMessage = Array.isArray(messages) ? messages[messages.length - 1] : null;
   // console.log("messages: ", messages);
   console.log("  lastMessage: " + JSON.stringify(lastMessage));
-  if (lastMessage && lastMessage.content.includes("Hablar con")) {
+  if (lastMessage && typeof lastMessage.content === 'string' && lastMessage.content.includes("Hablar con")) {
     toolChoiceConfiguration = "required";
     console.log("Tool is required")
   }
