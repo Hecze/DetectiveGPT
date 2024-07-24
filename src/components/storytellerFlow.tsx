@@ -163,19 +163,19 @@ export default function StorytellerFlow({
       audioRef.current.play();
       audioRef.current.volume = 0.04;
     }
-  
+
     setIsAudioPlaying(true);
     setIsLoading(true);
-  
+
     // Salir si el mensaje está vacío
     if (userMessage.trim() === '') {
       setIsLoading(false);
       return;
     }
-  
+
     // Limpiar el valor de entrada
     setInputValue('');
-  
+
     try {
       // Obtener la respuesta del asistente
       const response = await getAgentReply({
@@ -183,9 +183,9 @@ export default function StorytellerFlow({
         content: userMessage,
       });
       console.log('Response: ', response);
-  
+
       // Destructurar los valores del objeto de respuesta
-      const {
+      let {
         name: agentName,
         content: {
           text: agentReplyText,
@@ -196,24 +196,31 @@ export default function StorytellerFlow({
           changeAgent: { executed: agentChanged, newAgent: newAgentName }
         }
       } = response;
-  
+
       console.log('Le hablamos al agente: ' + agentName);
       console.log('La respuesta del agente es: ' + agentReplyText);
-  
+
       if (isGameOver) {
         // Establecer el epílogo y el resumen de la historia si el juego ha terminado
         setEpilogue(agentReplyText);
         setStorySummary(await createStorySummary());
         setGameOver(true);
       }
-  
+
       // Actualizar estados
 
       if (agentChanged) {
         console.log('El nuevo agente es: ' + newAgentName);
+        createAgent({ agentName: newAgentName, forgerPrompt: `Eres ${newAgentName}, un personaje secundario en una novela de misterio. Hablas directamente con el investigador del crimen.`, adjustmentPrompt: "Habla en primera persona, Ten personalidad, no seas tan servicial" });
+
+        const response = await getAgentReply({
+          agentName: newAgentName,
+          content: "",
+        })
+
+        agentReplyText = response.content.text;
+        agentReplyFormatted = response.content.formatted;
         setCurrentAgent(newAgentName as string);
-        createAgent({agentName: newAgentName, forgerPrompt: `Eres ${newAgentName}, un personaje secundario en una novela de misterio. Hablas directamente con el investigador del crimen.`, adjustmentPrompt : "Habla en primera persona, Ten personalidad, no seas tan servicial"});
-        
         //aca deberia hacer otra peticion a la api para que el agentesea el primero en hablar
       }
       else {
@@ -235,10 +242,10 @@ export default function StorytellerFlow({
       setStorySummary(await createStorySummary());
       setGameOver(true);
     }
-  
+
     setIsLoading(false);
   };
-  
+
   // Función para agregar un mensaje al contexto de un agente
 
   const handleVoiceChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -342,9 +349,8 @@ export default function StorytellerFlow({
                   />
                   <button
                     disabled={isLoading}
-                    className={`p-2 mr-4 ${
-                      isLoading ? 'opacity-20' : 'opacity-100 cursor-pointer'
-                    }`}
+                    className={`p-2 mr-4 ${isLoading ? 'opacity-20' : 'opacity-100 cursor-pointer'
+                      }`}
                     onClick={() => sendUserMessage(inputValue)}
                   >
                     <IoSendSharp size={24} />
