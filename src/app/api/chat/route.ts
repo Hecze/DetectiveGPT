@@ -66,7 +66,7 @@ async function speakWithAgent(name: string, messages: CoreMessage[]): Promise<Ag
         description: 'Se ejecuta cuando termina la conversación',
         parameters: z.object({
           cause: z.enum(['muerte', 'crimen resuelto', 'despedida']).describe('Motivo del final de la conversación. en la mayoria de casos es "despedida", es decir cuando "termina la conversación" de manera natural.'),
-          resume: z.string().describe('Resumen detallado y extenso de la informacion recaudada. Usa los parrafos necesarios. Maximo 600 caracteres'),
+          resume: z.string().describe('Resumen detallado y extenso en tercera persona de la informacion recaudada. Usa los parrafos necesarios. Maximo 600 caracteres'),
         }),
         execute: async ({ cause, resume }) => {
           ({ messageAgent, gameOver, currentAgent } = await handleEndConversation(cause, resume, name));
@@ -78,10 +78,10 @@ async function speakWithAgent(name: string, messages: CoreMessage[]): Promise<Ag
           newAgent: z.string().describe('Nombre del nuevo agente.'),
           personality: z.string().describe('Descripcion larga y detallada de la personalidad'),
           knowledge: z.string().describe('Descripcion larga y detallada de los conocimientos del personaje sobre la historia. Conocimientos sobre el crimen, pesca, agricultura, etc. No tiene que tener conocimientos relevantes necesariamente'),
-          context: z.string().describe('Descripcion larga y detallada del lugar y circunstancia de como el agente se encontró con el investigador. por ejemplo: en un bar, en la escena del crimen, en un hospital, etc'),
+          context: z.string().describe('Descripcion en tercera persona del lugar y circunstancia de como el agente se encontró con el investigador. por ejemplo: en un bar, en la escena del crimen, en un hospital, etc'),
         }),
         execute: async ({ newAgent, personality, knowledge, context }) => {
-          const prompt = `personalidad: ${personality}\nconocimiento: ${knowledge}\ncontexto: ${context}`;
+          const prompt = `personalidad: ${personality}\nconocimiento: ${knowledge}\n`;
           console.log('    changeAgent tool executed --> newAgent: '+ newAgent);
           changeAgent = { executed: true, newAgent: newAgent, prompt  };
         },
