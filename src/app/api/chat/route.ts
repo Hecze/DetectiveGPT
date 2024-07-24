@@ -76,11 +76,14 @@ async function speakWithAgent(name: string, messages: CoreMessage[]): Promise<Ag
         description: 'Se ejecuta cuando el usuario dice : "Hablar con [nombre del agente]". por ejemplo "Hablar con German"',
         parameters: z.object({
           newAgent: z.string().describe('Nombre del nuevo agente.'),
-          prompt: z.string().describe('Descripcion larga y detallada de la personalidad y papel en la trama del nuevo agente.'),
+          personality: z.string().describe('Descripcion larga y detallada de la personalidad'),
+          knowledge: z.string().describe('Descripcion larga y detallada de los conocimientos del personaje sobre la historia. Conocimientos sobre el crimen, pesca, agricultura, etc. No tiene que tener conocimientos relevantes necesariamente'),
+          context: z.string().describe('Descripcion larga y detallada del lugar y circunstancia de como el agente se encontró con el investigador. por ejemplo: en un bar, en la escena del crimen, en un hospital, etc'),
         }),
-        execute: async ({ newAgent, prompt }) => {
+        execute: async ({ newAgent, personality, knowledge, context }) => {
+          const prompt = `personalidad: ${personality}\nconocimiento: ${knowledge}\ncontexto: ${context}`;
           console.log('    changeAgent tool executed --> newAgent: '+ newAgent);
-          changeAgent = { executed: true, newAgent: newAgent, prompt: prompt };
+          changeAgent = { executed: true, newAgent: newAgent, prompt  };
         },
       }),
     },
