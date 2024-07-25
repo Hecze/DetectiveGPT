@@ -24,7 +24,7 @@ import {
   createStorySummary,
   addMessageToAgentContext,
 } from '@/utils/agentContextManager';
-import { agentPrompts } from '@/utils/agentPrompts';
+import { agentPrompts, gameSettings } from '@/utils/agentPrompts';
 
 export const dynamic = 'force-dynamic';
 
@@ -36,11 +36,13 @@ type Voice = {
   voiceURI?: string;
 };
 
+import { SelectedPersonality } from '@/types/initialSettings';
+
 export default function StorytellerFlow({
   investigatorPersonalities,
   storySubcategory,
 }: {
-  investigatorPersonalities: any;
+  investigatorPersonalities: SelectedPersonality[];
   storySubcategory: string;
 }) {
   const audioRef = useRef<HTMLAudioElement>(null);
@@ -63,6 +65,40 @@ export default function StorytellerFlow({
   const [epilogue, setEpilogue] = useState<string>('');
   const [storySummary, setStorySummary] = useState<string>('');
   const createStorytellerAgent = () => {
+    let difficultyPrompt = "";
+    let violencePrompt = "";
+    let durationPrompt = "";
+
+    // Mapping de la dificultad seleccionada por el usuario a la configuración del juego
+    if (investigatorPersonalities[0].optionSelected === 'Fácil') {
+      difficultyPrompt = gameSettings['dificulty']['low'];
+    } else if (investigatorPersonalities[0].optionSelected === 'Medio') {
+      difficultyPrompt = gameSettings['dificulty']['mid'];
+    }
+    else {
+      difficultyPrompt = gameSettings['dificulty']['high'];
+    }
+
+    if (investigatorPersonalities[1].optionSelected === 'Bajo') {
+      violencePrompt = gameSettings['violence']['low'];
+    }
+    else if (investigatorPersonalities[1].optionSelected === 'Medio') {
+      violencePrompt = gameSettings['violence']['mid'];
+    }
+    else {
+      violencePrompt = gameSettings['violence']['high'];
+    }
+
+    if (investigatorPersonalities[2].optionSelected === '10 minutos') {
+      durationPrompt = gameSettings['duration']['low'];
+    }
+    else if (investigatorPersonalities[2].optionSelected === '30 minutos') {
+      durationPrompt = gameSettings['duration']['mid'];
+    }
+    else {
+      durationPrompt = gameSettings['duration']['high'];
+    }
+
     try {
       const prompts = agentPrompts['storyteller'];
       if (!prompts) {
@@ -71,8 +107,8 @@ export default function StorytellerFlow({
 
       createAgent({
         agentName: 'storyteller',
-        forgerPrompt: prompts.forgerPrompt,
-        adjustmentPrompt: prompts.adjustmentPrompt,
+        forgerPrompt: prompts.forgerPrompt + `El tipo de misterio es ${storySubcategory}.` + difficultyPrompt + violencePrompt + durationPrompt,
+        adjustmentPrompt: prompts.adjustmentPrompt + "",
       });
 
       console.log('Storyteller agent created successfully.');
@@ -213,7 +249,7 @@ export default function StorytellerFlow({
       if (agentChanged) {
         console.log('El nuevo agente es: ' + newAgentName);
         createAgent({ agentName: newAgentName, forgerPrompt: `Eres ${newAgentName}, un personaje secundario en una novela de misterio. No tengas una personalidad exagerada. No seas servicial. No seas ambiguo. No hables de manera poética. Responde textos cortos.`, adjustmentPrompt: `Habla en primera persona. Tu objetivo es conversar naturalmente no brindar informacion.El investigador debe ganarse tu confianza. No conoces al investigador hasta ahora a menos que la siguiente data diga lo contrario:  ${agentPrompt}. No repitas esta informacion textualmente, es solo contexto para que sepas como actuar. No acabes tus frases con preguntas. Empieza tu conversacion con una frase de como te sientes con respecto a los ultimos sucesos. No seas tan ambiguo` });
-        addMessageToAgentContext({agentName, content:`*Este es un mensaje que se agrega automaticamente cada que se agrega un nuevo personaje. Nuevo Personaje agregado a la trama:\n  nombre:${newAgentName}\n  definicion:${agentPrompt} *`, role:"user"});
+        addMessageToAgentContext({ agentName, content: `*Este es un mensaje que se agrega automaticamente cada que se agrega un nuevo personaje. Nuevo Personaje agregado a la trama:\n  nombre:${newAgentName}\n  definicion:${agentPrompt} *`, role: "user" });
         const response = await getAgentReply({
           agentName: newAgentName,
           content: "",

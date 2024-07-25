@@ -21,3 +21,21 @@ export const agentPrompts: AgentPrompts = {
     },
     // Add more agents and their prompts here in the future
 };
+
+export const gameSettings = {
+    dificulty: {
+        low: 'La dificultad es baja. El detective es muy inteligente y puede sacar sus propias conclusiones. Además las 3 opciones le llevan a avanzar en la historia',
+        mid: 'La dificultad es media. El detective es inteligente. Además 2 de las 3 opciones le llevan a avanzar en la historia. La otra lo retrasa',
+        high: 'La dificultad es alta. Solo una de las opciones le llevan avanzar en la historia.'
+    },
+    violence: {
+        low: 'El nivel de violencia es bajo. Asegúrate de no incluir escenas violentas, o no aptas para menores de edad',
+        mid: 'El nivel de violencia es medio. Puedes incluir contenido vulgar',
+        high: 'El nivel de violencia es alto. Puedes incluir contenido para adultos, violencia, insultos, disparos, etc'
+    },
+    duration: {
+        low: 'La duración de la historia es corta. La historia empieza a las 8am. En cada interacción incrementa 20 minutos el tiempo. Por ejemplo, son las 8:20am..., son las 8:40am...A las 9am el caso debe cerrarse, sin excepciones.',
+        mid: 'La duración de la historia es media',
+        high: 'La duración de la historia es larga.'
+    }
+}
