@@ -5,10 +5,9 @@ import PersonalitySlider from './PersonalitySlider';
 
 export default function InitialSettings({ handleStartGame }: { handleStartGame: any }) {
   const availablePersonalities = [
-    { tag: 'Paciencia', options: ['Impaciente', 'Neutral', 'Paciente'] },
-    { tag: 'Optimismo', options: ['Pesimista', 'Neutral', 'Optimista'] },
-    { tag: 'Cortesía', options: ['Maleducado', 'Netural', 'Cortés'] },
-    { tag: 'Espontaneidad', options: ['Metódico', 'Neutral', 'Espontáneo'] },
+    { tag: 'Dificultad', options: ['Fácil', 'Medio', 'Difícil'] },
+    { tag: 'Nivel de violencia', options: ['Bajo', 'Medio', 'Alto'] },
+    { tag: 'Duración de la historia', options: ['10 minutos', '30 minutos', '1 hora'] },
   ];
 
   const [availableSubcategories, setAvailableSubcategories] = useState([
@@ -47,8 +46,9 @@ export default function InitialSettings({ handleStartGame }: { handleStartGame: 
   return (
     <div className="text-white bg-[#18130F] m-auto flex flex-col items-center p-3 pb-5">
       <img width="200" height="200" src="logo.png" />
+      <h1 className='text-4xl py-5'>Criminología Procedural</h1>
       <div className="mb-4 text-center">
-        <p className="text-2xl pt-3">Elige la personalidad del detective</p>
+        <p className="text-2xl pt-3">Configuración del juego</p>
         {availablePersonalities.map((personality) => (
           <PersonalitySlider
             key={personality.tag}
