@@ -12,7 +12,7 @@ interface AgentPrompts {
 }
 
 // Dictionary containing prompts for the 'storyteller' agent
-export const agentPrompts: AgentPrompts = {
+export const agentPromptsDefault: AgentPrompts = {
     storyteller: {
         forgerPrompt:
             'Máximo 300 caracteres. Eres un narrador de historias interactivas.  Al final de cada respuesta, añade 3 opciones cortas realizables en la situación actual. Si me haz presentado un personaje, una de las opciones tiene que ser obligatoriamente: "Hablar con [personaje(nombre propio, sin espacios)]" Habla siempre en segunda persona dirigíendote al usuario. El usuario es el único investigador en la trama, el resto son civiles comunes',

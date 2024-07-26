@@ -11,12 +11,6 @@ import {
 } from 'react';
 import { IoSendSharp } from 'react-icons/io5';
 import Option from './option';
-import {
-  CoreAssistantMessage,
-  CoreMessage,
-  CoreSystemMessage,
-  CoreUserMessage,
-} from 'ai';
 import Endgame from './endgame';
 import {
   createAgent,
@@ -24,7 +18,7 @@ import {
   createStorySummary,
   addMessageToAgentContext,
 } from '@/utils/agentContextManager';
-import { agentPrompts, gameSettings } from '@/utils/agentPrompts';
+import {agentPromptsDefault, gameSettings } from '@/utils/agentPrompts';
 
 export const dynamic = 'force-dynamic';
 
@@ -39,11 +33,18 @@ type Voice = {
 import { SelectedPersonality } from '@/types/initialSettings';
 
 export default function StorytellerFlow({
-  investigatorPersonalities,
-  storySubcategory,
+  investigatorPersonalities = [],
+  storySubcategory = "Misterio",
+  agentPrompts = {
+    storyteller: { forgerPrompt: agentPromptsDefault.storyteller.forgerPrompt, adjustmentPrompt: agentPromptsDefault.storyteller.adjustmentPrompt as string },
+  },
 }: {
-  investigatorPersonalities: SelectedPersonality[];
-  storySubcategory: string;
+  investigatorPersonalities?: SelectedPersonality[];
+  storySubcategory?: string;
+  agentPrompts?: {
+    storyteller: { forgerPrompt: string; adjustmentPrompt: string };
+    [key: string]: { forgerPrompt: string; adjustmentPrompt: string };
+  };
 }) {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [isAudioPlaying, setIsAudioPlaying] = useState(false);
@@ -70,34 +71,37 @@ export default function StorytellerFlow({
     let durationPrompt = "";
 
     // Mapping de la dificultad seleccionada por el usuario a la configuración del juego
-    if (investigatorPersonalities[0].optionSelected === 'Fácil') {
-      difficultyPrompt = gameSettings['dificulty']['low'];
-    } else if (investigatorPersonalities[0].optionSelected === 'Medio') {
-      difficultyPrompt = gameSettings['dificulty']['mid'];
-    }
-    else {
-      difficultyPrompt = gameSettings['dificulty']['high'];
+    if (investigatorPersonalities[0]  !== undefined) {
+      if (investigatorPersonalities[0].optionSelected === 'Fácil') {
+        difficultyPrompt = gameSettings['dificulty']['low'];
+      } else if (investigatorPersonalities[0].optionSelected === 'Medio') {
+        difficultyPrompt = gameSettings['dificulty']['mid'];
+      }
+      else {
+        difficultyPrompt = gameSettings['dificulty']['high'];
+      }
+  
+      if (investigatorPersonalities[1].optionSelected === 'Bajo') {
+        violencePrompt = gameSettings['violence']['low'];
+      }
+      else if (investigatorPersonalities[1].optionSelected === 'Medio') {
+        violencePrompt = gameSettings['violence']['mid'];
+      }
+      else {
+        violencePrompt = gameSettings['violence']['high'];
+      }
+  
+      if (investigatorPersonalities[2].optionSelected === '10 minutos') {
+        durationPrompt = gameSettings['duration']['low'];
+      }
+      else if (investigatorPersonalities[2].optionSelected === '30 minutos') {
+        durationPrompt = gameSettings['duration']['mid'];
+      }
+      else {
+        durationPrompt = gameSettings['duration']['high'];
+      }
     }
 
-    if (investigatorPersonalities[1].optionSelected === 'Bajo') {
-      violencePrompt = gameSettings['violence']['low'];
-    }
-    else if (investigatorPersonalities[1].optionSelected === 'Medio') {
-      violencePrompt = gameSettings['violence']['mid'];
-    }
-    else {
-      violencePrompt = gameSettings['violence']['high'];
-    }
-
-    if (investigatorPersonalities[2].optionSelected === '10 minutos') {
-      durationPrompt = gameSettings['duration']['low'];
-    }
-    else if (investigatorPersonalities[2].optionSelected === '30 minutos') {
-      durationPrompt = gameSettings['duration']['mid'];
-    }
-    else {
-      durationPrompt = gameSettings['duration']['high'];
-    }
 
     try {
       const prompts = agentPrompts['storyteller'];
