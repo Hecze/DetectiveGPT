@@ -249,7 +249,7 @@ export default function StorytellerFlow({
       if (agentChanged) {
         console.log('El nuevo agente es: ' + newAgentName);
         createAgent({ agentName: newAgentName, forgerPrompt: `Eres ${newAgentName}, un personaje secundario en una novela de misterio. No tengas una personalidad exagerada. No seas servicial. No seas ambiguo. No hables de manera poética. Responde textos cortos.`, adjustmentPrompt: `Habla en primera persona. Tu objetivo es conversar naturalmente no brindar informacion.El investigador debe ganarse tu confianza. No conoces al investigador hasta ahora a menos que la siguiente data diga lo contrario:  ${agentPrompt}. No repitas esta informacion textualmente, es solo contexto para que sepas como actuar. No acabes tus frases con preguntas. Empieza tu conversacion con una frase de como te sientes con respecto a los ultimos sucesos. No seas tan ambiguo` });
-        addMessageToAgentContext({ agentName, content: `*Este es un mensaje que se agrega automaticamente cada que se agrega un nuevo personaje. Nuevo Personaje agregado a la trama:\n  nombre:${newAgentName}\n  definicion:${agentPrompt} *`, role: "user" });
+        addMessageToAgentContext({ agentName, content: `*Este es un mensaje que se agrega automaticamente cada que se termina de hablar con un nuevo personaje. Nuevo Personaje agregado a la trama:\n  nombre:${newAgentName}\n  definicion:${agentPrompt} . EL usuario ya se ha despedido de este personaje. cuando te diga "continuar" narra la trama que ocurre inmediatamente despues de que el usuario se despida, no le repitas la informacion anteriormente mencionada*`, role: "user" });
         const response = await getAgentReply({
           agentName: newAgentName,
           content: "",

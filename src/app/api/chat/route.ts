@@ -26,18 +26,21 @@ export async function POST(req: Request) {
 }
 
 async function textToJson(text: string) {
+  console.log("    executing textToJson: ", text);
   const { object } = await generateObject({
     model: openai('gpt-4o-mini'),
-    system: `Transformas texto a formato JSON. siguiendo el esquema: paragraph, option1, option2, option3. No modifiques el contenido.`,
+    system: `Transformas texto a formato JSON. siguiendo el esquema: paragraph, option1, option2, option3. No te inventes informacion. Si no hay opciones, escribe "..." en las respectivas opciones vacias`,
     prompt: text,
     maxTokens: 200,
     schema: z.object({
       paragraph: z.string().describe('Parrafo principal'),
-      option1: z.string().describe('Primera opción posible.'),
-      option2: z.string().describe('Segunda opción posible.'),
-      option3: z.string().describe('Tercera opción posible.'),
+      option1: z.string().describe('Primera opción. Puede estar vacia.'),
+      option2: z.string().describe('Segunda opción. Puede estar vacia.'),
+      option3: z.string().describe('Tercera opción. Puede estar vacia.'),
     }),
   });
+  console.log("    result textToJson: ", object);
+
 
   return object;
 }
@@ -63,7 +66,7 @@ async function speakWithAgent(name: string, messages: CoreMessage[]): Promise<Ag
     toolChoice: toolChoiceConfiguration,
     tools: {
       endConversation: tool({
-        description: 'Se ejecuta cuando termina la conversación',
+        description: `Se ejecuta cuando se termina la conversación. Solo disponible si: "storyteller" != "${name}"`,
         parameters: z.object({
           cause: z.enum(['muerte', 'crimen resuelto', 'despedida']).describe('Motivo del final de la conversación. en la mayoria de casos es "despedida", es decir cuando "termina la conversación" de manera natural.'),
           resume: z.string().describe('Resumen detallado y extenso en tercera persona de la informacion recaudada. Usa los parrafos necesarios. Maximo 600 caracteres'),
@@ -89,16 +92,26 @@ async function speakWithAgent(name: string, messages: CoreMessage[]): Promise<Ag
     },
   });
 
+
+
   if (!gameOver && currentAgent === name.toLowerCase()) {
     messageAgent = result.text;
   }
 
-  const formattedResponse = currentAgent === 'storyteller' ? await textToJson(messageAgent) : {
-    paragraph: messageAgent,
-    option1: 'Continuar',
-    option2: '',
-    option3: ''
-  };
+  let formattedResponse;
+
+  if (currentAgent === 'storyteller' && !messageAgent.includes('Anotas')) {
+    console.log(`\n  messageAgent: ${messageAgent}`);
+    formattedResponse = await textToJson(messageAgent);
+  } else {
+    formattedResponse = {
+      paragraph: messageAgent,
+      option1: 'Continuar',
+      option2: '',
+      option3: ''
+    };
+  }
+  
 
   const agentResponse: AgentResponse = {
     name: currentAgent,
@@ -118,18 +131,18 @@ async function speakWithAgent(name: string, messages: CoreMessage[]): Promise<Ag
 }
 
 async function handleEndConversation(cause: "muerte" | "crimen resuelto" | "despedida", resume: string, name: string) {
-  let messageAgent = `Anotas todo lo conversado con ${name} en tu libreta: ${resume}.`;
+  let messageAgent = `Te despides de ${name} y anotas todo lo conversado en tu libreta: ${resume}.`;
   console.log(`\n  ---> handleEndConversation(\n    cause: ${cause},\n    resume: ${resume},\n    name: ${name})`);
   let gameOver = false;
 
   if (cause === 'muerte') {
-    messageAgent = `    El investigador ha muerto. ${resume}`;
+    messageAgent = `El investigador ha muerto. ${resume}`;
     gameOver = true;
   } else if (cause === 'crimen resuelto') {
-    messageAgent = `    El investigador ha resuelto el crimen. ${resume}`;
+    messageAgent = `El investigador ha resuelto el crimen. ${resume}`;
     gameOver = true;
   } else {
-    messageAgent = `    Anotas todo lo conversado con ${name} en tu libreta: ${resume}`;
+    messageAgent = `Anotas todo lo conversado con ${name} en tu libreta: ${resume}`;
   }
 
   console.log(`    La conversacion ha terminado por: ${cause}`);
