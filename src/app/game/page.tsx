@@ -1,21 +1,33 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation'; // Importar el router de Next.js
+import { useRouter } from 'next/navigation';
 import StorytellerFlow from '@/components/storytellerFlow';
 import Image from 'next/image';
 
+interface Agent {
+  name: string;
+  forgerPrompt: string;
+  adjustmentPrompt: string;
+}
+
+interface SavedCase {
+  title: string;
+  description: string;
+  img: string;
+  agents: Agent[];
+}
+
 export default function Game() {
-  const router = useRouter(); // Crear una instancia del router
-  const [gameIsStarted, setGameIsStarted] = useState(false);
-  const [selectedPersonalities, setSelectedPersonalities] = useState([]);
-  const [selectedSubcategory, setSelectedSubcategory] = useState('Sobrenatural');
-  let savedCase: any = {};
+  const router = useRouter();
+  const [savedCase, setSavedCase] = useState<SavedCase | null>(null);
 
   useEffect(() => {
-    // Verificar si hay datos en el localStorage
-    savedCase = localStorage.getItem('selectedCase');
-    if (!savedCase) {
-      // Si no hay datos, redirigir a /personalize
+    const storedCase = localStorage.getItem('selectedCase');
+    if (storedCase) {
+      const parsedCase: SavedCase = JSON.parse(storedCase);
+      setSavedCase(parsedCase);
+      console.log('agentContext', parsedCase.agents);
+    } else {
       router.push('/personalize');
     }
   }, [router]);
@@ -31,11 +43,11 @@ export default function Game() {
           className="max-w-1/4 max-h-screen hidden xl:block"
           priority
         />
-        <StorytellerFlow
-          investigatorPersonalities={selectedPersonalities}
-          storySubcategory={selectedSubcategory}
-          agentPrompts={savedCase.agents}
-        />
+        {savedCase && savedCase.agents && savedCase.agents.length > 0 && (
+          <StorytellerFlow
+            agentPrompts={savedCase.agents}
+          />
+        )}
         <Image
           src="/fondoSecundarioDerecho.webp"
           alt="fondoSecundarioDerecho"

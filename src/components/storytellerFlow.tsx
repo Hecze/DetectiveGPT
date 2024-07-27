@@ -17,8 +17,9 @@ import {
   getAgentReply,
   createStorySummary,
   addMessageToAgentContext,
+  agentContextPool,
 } from '@/utils/agentContextManager';
-import {agentPromptsDefault, gameSettings } from '@/utils/agentPrompts';
+import { agentPromptsDefault, gameSettings } from '@/utils/agentPrompts';
 
 export const dynamic = 'force-dynamic';
 
@@ -35,16 +36,13 @@ import { SelectedPersonality } from '@/types/initialSettings';
 export default function StorytellerFlow({
   investigatorPersonalities = [],
   storySubcategory = "Misterio",
-  agentPrompts = {
-    storyteller: { forgerPrompt: agentPromptsDefault.storyteller.forgerPrompt, adjustmentPrompt: agentPromptsDefault.storyteller.adjustmentPrompt as string },
-  },
+  agentPrompts = [{ name: 'storyteller', forgerPrompt: agentPromptsDefault.storyteller.forgerPrompt, adjustmentPrompt: agentPromptsDefault.storyteller.adjustmentPrompt as string }],
+
 }: {
   investigatorPersonalities?: SelectedPersonality[];
   storySubcategory?: string;
-  agentPrompts?: {
-    storyteller: { forgerPrompt: string; adjustmentPrompt: string };
-    [key: string]: { forgerPrompt: string; adjustmentPrompt: string };
-  };
+  agentPrompts?: { name: string; forgerPrompt: string; adjustmentPrompt: string }[];
+
 }) {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [isAudioPlaying, setIsAudioPlaying] = useState(false);
@@ -66,12 +64,13 @@ export default function StorytellerFlow({
   const [epilogue, setEpilogue] = useState<string>('');
   const [storySummary, setStorySummary] = useState<string>('');
   const createStorytellerAgent = () => {
+    console.log(agentPrompts)
     let difficultyPrompt = "";
     let violencePrompt = "";
     let durationPrompt = "";
 
     // Mapping de la dificultad seleccionada por el usuario a la configuración del juego
-    if (investigatorPersonalities[0]  !== undefined) {
+    if (investigatorPersonalities[0] !== undefined) {
       if (investigatorPersonalities[0].optionSelected === 'Fácil') {
         difficultyPrompt = gameSettings['dificulty']['low'];
       } else if (investigatorPersonalities[0].optionSelected === 'Medio') {
@@ -80,7 +79,7 @@ export default function StorytellerFlow({
       else {
         difficultyPrompt = gameSettings['dificulty']['high'];
       }
-  
+
       if (investigatorPersonalities[1].optionSelected === 'Bajo') {
         violencePrompt = gameSettings['violence']['low'];
       }
@@ -90,7 +89,7 @@ export default function StorytellerFlow({
       else {
         violencePrompt = gameSettings['violence']['high'];
       }
-  
+
       if (investigatorPersonalities[2].optionSelected === '10 minutos') {
         durationPrompt = gameSettings['duration']['low'];
       }
@@ -104,18 +103,29 @@ export default function StorytellerFlow({
 
 
     try {
-      const prompts = agentPrompts['storyteller'];
-      if (!prompts) {
+      const storytellerPrompt = agentPrompts.find((prompt) => prompt.name === 'storyteller');
+      if (!storytellerPrompt) {
         throw new Error('Prompts for storyteller agent not found');
       }
-
-      createAgent({
-        agentName: 'storyteller',
-        forgerPrompt: prompts.forgerPrompt + `El tipo de misterio es ${storySubcategory}.` + difficultyPrompt + violencePrompt + durationPrompt,
-        adjustmentPrompt: prompts.adjustmentPrompt + "",
+      console.log(Object.keys(agentContextPool));
+      console.log(agentPrompts);
+      agentPrompts.forEach((prompt) => {
+        console.log(prompt.name);
+        createAgent({
+          agentName: prompt.name.toLowerCase(),
+          forgerPrompt: prompt.forgerPrompt,
+          adjustmentPrompt: prompt.adjustmentPrompt,
+        });
       });
 
+      // createAgent({
+      //   agentName: 'storyteller',
+      //   forgerPrompt: storytellerPrompt.forgerPrompt + `El tipo de misterio es ${storySubcategory}.` + difficultyPrompt + violencePrompt + durationPrompt,
+      //   adjustmentPrompt: storytellerPrompt.adjustmentPrompt + "",
+      // });
+
       console.log('Storyteller agent created successfully.');
+      console.log(Object.keys(agentContextPool));
     } catch (error) {
       console.error('Error creating storyteller agent:', error);
     }
@@ -252,8 +262,20 @@ export default function StorytellerFlow({
 
       if (agentChanged) {
         console.log('El nuevo agente es: ' + newAgentName);
-        createAgent({ agentName: newAgentName, forgerPrompt: `Eres ${newAgentName}, un personaje secundario en una novela de misterio. No tengas una personalidad exagerada. No seas servicial. No seas ambiguo. No hables de manera poética. Responde textos cortos.`, adjustmentPrompt: `Habla en primera persona. Tu objetivo es conversar naturalmente no brindar informacion.El investigador debe ganarse tu confianza. No conoces al investigador hasta ahora a menos que la siguiente data diga lo contrario:  ${agentPrompt}. No repitas esta informacion textualmente, es solo contexto para que sepas como actuar. No acabes tus frases con preguntas. Empieza tu conversacion con una frase de como te sientes con respecto a los ultimos sucesos. No seas tan ambiguo` });
-        addMessageToAgentContext({ agentName, content: `*Este es un mensaje que se agrega automaticamente cada que se termina de hablar con un nuevo personaje. Nuevo Personaje agregado a la trama:\n  nombre:${newAgentName}\n  definicion:${agentPrompt} . EL usuario ya se ha despedido de este personaje. cuando te diga "continuar" narra la trama que ocurre inmediatamente despues de que el usuario se despida, no le repitas la informacion anteriormente mencionada*`, role: "user" });
+        //buscar si el nombre ya esta en el pool de agente
+        console.log(newAgentName)
+        console.log(Object.keys(agentContextPool))
+        if (newAgentName.toLowerCase() in agentContextPool) {
+
+          console.log('El agente ya existe');
+        }
+        else {
+          console.log("el agente no existe");
+          createAgent({ agentName: newAgentName, forgerPrompt: `Eres ${newAgentName}, un personaje secundario en una novela de misterio. No tengas una personalidad exagerada. No seas servicial. No seas ambiguo. No hables de manera poética. Responde textos cortos.`, adjustmentPrompt: `Habla en primera persona. Tu objetivo es conversar naturalmente no brindar informacion.El investigador debe ganarse tu confianza. No conoces al investigador hasta ahora a menos que la siguiente data diga lo contrario:  ${agentPrompt}. No repitas esta informacion textualmente, es solo contexto para que sepas como actuar. No acabes tus frases con preguntas. Empieza tu conversacion con una frase de como te sientes con respecto a los ultimos sucesos. No seas tan ambiguo` });
+          addMessageToAgentContext({ agentName, content: `*Este es un mensaje que se agrega automaticamente cada que se termina de hablar con un nuevo personaje. Nuevo Personaje agregado a la trama:\n  nombre:${newAgentName}\n  definicion:${agentPrompt} . EL usuario ya se ha despedido de este personaje. cuando te diga "continuar" narra la trama que ocurre inmediatamente despues de que el usuario se despida, no le repitas la informacion anteriormente mencionada*`, role: "user" });
+
+        }
+
         const response = await getAgentReply({
           agentName: newAgentName,
           content: "",
