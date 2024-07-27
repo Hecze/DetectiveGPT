@@ -2,9 +2,13 @@
 import { Button } from '@nextui-org/button';
 import { useState } from 'react';
 import PersonalitySlider from './PersonalitySlider';
-import { Personality } from '@/types/initialSettings';
+import { Personality, SelectedPersonality } from '@/types/initialSettings';
 
-export default function InitialSettings({ handleStartGame }: { handleStartGame: any }) {
+type InitialSettingsProps = {
+  handleStartGame: (personalities: SelectedPersonality[], subcategory: string) => void;
+};
+
+export default function InitialSettings({ handleStartGame }: InitialSettingsProps) {
   const availablePersonalities: Personality[] = [
     { tag: 'Dificultad', options: ['Fácil', 'Medio', 'Difícil'] },
     { tag: 'Nivel de violencia', options: ['Bajo', 'Medio', 'Alto'] },

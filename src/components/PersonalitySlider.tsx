@@ -5,7 +5,7 @@ import React, { useState } from 'react';
 interface PersonalitySliderProps {
   tag: string;
   options: string[];
-  handleChange: any; // Definir la propiedad handleChange como una función opcional
+  handleChange: (tag: string, value: string) => void;
 }
 
 const PersonalitySlider: React.FC<PersonalitySliderProps> = ({ tag, options, handleChange }) => {
