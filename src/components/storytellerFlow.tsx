@@ -141,7 +141,7 @@ export default function StorytellerFlow({
       .init({
         volume: 0.5,
         lang: 'es-MX',
-        rate: 1,
+        rate: 1.7,
         pitch: 1,
         listeners: {
           onvoiceschanged: (voices: any) => {
