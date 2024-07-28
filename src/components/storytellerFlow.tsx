@@ -111,6 +111,7 @@ export default function StorytellerFlow({
       console.log(agentPrompts);
       agentPrompts.forEach((prompt) => {
         console.log(prompt.name);
+        
         createAgent({
           agentName: prompt.name.toLowerCase(),
           forgerPrompt: prompt.forgerPrompt,

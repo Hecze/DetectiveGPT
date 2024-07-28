@@ -11,10 +11,10 @@ interface CaseType {
 export default function Case({ title, description, img, onClick }: CaseType) {
   return (
     <div
-      className="shadow-md rounded-lg p-6 m-4 w-full h-[350px] max-w-3xl bg-slate-700 text-gray-200 cursor-pointer hover:opacity-80 transition-opacity flex gap-4"
+      className="shadow-md rounded-lg p-6 m-4 w-full sm:h-[350px] max-w-3xl bg-slate-700 text-gray-200 cursor-pointer hover:opacity-80 transition-opacity flex flex-wrap sm:flex-nowrap gap-4"
       onClick={onClick}
     >
-      <div className="flex-shrink-0 w-1/3 shadow-inner">
+      <div className="flex-shrink-0 w-full sm:w-1/3 shadow-inner">
         <img
           src={img}
           alt={title}

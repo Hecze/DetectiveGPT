@@ -83,7 +83,13 @@ export const addMessageToAgentContext = ({ agentName, content, role }: AddMessag
 /**
  * Initializes the context for a new agent with the provided forger prompt and optional adjustment prompt.
  * 
- * @param {CreateAgentContextParams} params - The parameters for creating the agent context.
+ * @param {Object} params - The parameters object.
+ * @param {CreateAgentContextParams} params.forgerPrompt - The initial prompt that defines the agent's role and behavior. This is typically a concise statement describing the agent's function or role. For example: "You are a baker", "You are a story narrator", "You are a restaurant assistant".
+ * This prompt is used with the 'system' role and sets the foundational context for the agent.
+ * Recommended Maximum Characters: 250.
+ * @param {CreateAgentContextParams} [params.adjustmentPrompt] - An optional prompt to provide additional instructions or refine the agent's behavior. This can include more detailed or extensive instructions that shape the agent's personality or responses. For example: "You are friendly and helpful. When responding, always ask if the user needs further assistance."
+ * This prompt is used with the 'user' role and helps to adjust or add specifics to the agent's behavior beyond the initial role.
+ * Recommended Maximum Characters: 2500.
  */
 const initializeAgentContext = ({
   agentName,
