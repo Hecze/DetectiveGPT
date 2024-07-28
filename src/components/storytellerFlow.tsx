@@ -36,7 +36,7 @@ import { SelectedPersonality } from '@/types/initialSettings';
 export default function StorytellerFlow({
   investigatorPersonalities = [],
   storySubcategory = "Misterio",
-  agentPrompts = [{ name: 'storyteller', forgerPrompt: agentPromptsDefault.storyteller.forgerPrompt, adjustmentPrompt: agentPromptsDefault.storyteller.adjustmentPrompt as string }],
+  agentPrompts = undefined,
 
 }: {
   investigatorPersonalities?: SelectedPersonality[];
@@ -101,8 +101,11 @@ export default function StorytellerFlow({
       }
     }
 
-
     try {
+      if (agentPrompts === undefined) {
+        agentPrompts = [{ name: 'storyteller', forgerPrompt: agentPromptsDefault.storyteller.forgerPrompt + `El tipo de misterio es ${storySubcategory}.` + difficultyPrompt + violencePrompt + durationPrompt, adjustmentPrompt: agentPromptsDefault.storyteller.adjustmentPrompt as string }]
+      }
+
       const storytellerPrompt = agentPrompts.find((prompt) => prompt.name === 'storyteller');
       if (!storytellerPrompt) {
         throw new Error('Prompts for storyteller agent not found');
