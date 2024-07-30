@@ -83,7 +83,7 @@ export default function Home() {
           key={0}
           title={"Personalizar"}
           description={"Configura manualmente tu caso"}
-          img={"/cases/add.jpg"}
+          img={"book.png"}
           onClick={() => handlePersonalizeClick()} // Agrega el onClick
         />
       </div>

@@ -50,8 +50,8 @@ export default function InitialSettings({ handleStartGame }: InitialSettingsProp
 
   return (
     <div className="text-white bg-[#18130F] m-auto flex flex-col items-center p-3 pb-5">
-      <img width="200" height="200" src="logo.png" />
-      <h1 className='text-4xl py-5'>Criminología Procedural</h1>
+      <img width="200" height="200" src="book.png" />
+      <h1 className='text-4xl py-5'>Detective GPT</h1>
       <div className="mb-4 text-center">
         <p className="text-2xl pt-3">Configuración del juego</p>
         {availablePersonalities.map((personality) => (
