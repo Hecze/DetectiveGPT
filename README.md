@@ -2,6 +2,20 @@ This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next
 
 ## Getting Started in Detective GPT
 
+Create an API KEY in [OpenAI](https://platform.openai.com/account/api-keys) and add it to the `.env.local` file.
+
+```bash
+OPENAI_API_KEY=sk-<API_KEY>
+```
+
+Install depencencies
+
+```bash
+npm install
+# or
+pnpm install
+```
+
 First, run the development server:
 
 ```bash
