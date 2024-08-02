@@ -55,9 +55,12 @@ async function speakWithAgent(name: string, messages: CoreMessage[]): Promise<Ag
   const lastMessage = Array.isArray(messages) ? messages[messages.length - 1] : null;
   // console.log("messages: ", messages);
   console.log("  lastMessage: " + JSON.stringify(lastMessage));
-  if (lastMessage && typeof lastMessage.content === 'string' && lastMessage.content.includes("Hablar con")) {
+  if (lastMessage && typeof lastMessage.content === 'string' && (lastMessage.content.toLowerCase().includes("hablar con") || lastMessage.content.toLowerCase().includes("terminar conversación"))) {
     toolChoiceConfiguration = "required";
     console.log("Tool is required")
+  }
+  else {
+    toolChoiceConfiguration = "none";
   }
   const result = await generateText({
     model: openai('gpt-4o-mini'),
@@ -78,15 +81,15 @@ async function speakWithAgent(name: string, messages: CoreMessage[]): Promise<Ag
       changeAgent: tool({
         description: 'Se ejecuta cuando el usuario dice : "Hablar con [nombre del agente]". por ejemplo "Hablar con German"',
         parameters: z.object({
-          newAgent: z.string().describe('Nombre del nuevo agente.'),
+          newAgent: z.string().describe('Nombre del nuevo agente. Si aun no se ha mencionado, dale un nombre'),
           personality: z.string().describe('Descripcion larga y detallada de la personalidad'),
           knowledge: z.string().describe('Descripcion larga y detallada de los conocimientos del personaje sobre la historia. Conocimientos sobre el crimen, pesca, agricultura, etc. No tiene que tener conocimientos relevantes necesariamente'),
           context: z.string().describe('Descripcion en tercera persona del lugar y circunstancia de como el agente se encontró con el investigador. por ejemplo: en un bar, en la escena del crimen, en un hospital, etc'),
         }),
         execute: async ({ newAgent, personality, knowledge, context }) => {
           const prompt = `personalidad: ${personality}\nconocimiento: ${knowledge}\n`;
-          console.log('    changeAgent tool executed --> newAgent: '+ newAgent);
-          changeAgent = { executed: true, newAgent: newAgent, prompt  };
+          console.log('    changeAgent tool executed --> newAgent: ' + newAgent);
+          changeAgent = { executed: true, newAgent: newAgent, prompt };
         },
       }),
     },
@@ -111,7 +114,7 @@ async function speakWithAgent(name: string, messages: CoreMessage[]): Promise<Ag
       option3: ''
     };
   }
-  
+
 
   const agentResponse: AgentResponse = {
     name: currentAgent,
