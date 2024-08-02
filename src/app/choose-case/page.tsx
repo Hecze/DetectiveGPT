@@ -68,8 +68,9 @@ export default function Home() {
   };
 
   return (
-    <main className="flex min-h-screen w-screen justify-center bg-[#18130F] overflow-hidden">
-      <div className="flex flex-wrap justify-center items-center p-6">
+    <main className="flex min-h-screen w-screen justify-center bg-[#18130F] py-12 sm:py-0 overflow-hidden flex-col gap-12 sm:gap-0 ">
+      <h1 className='text-white text-3xl text-center'>Elige un caso o inventa el tuyo propio</h1>
+      <div className="flex flex-wrap justify-center items-center sm:p-6">
         {cases.map((caseItem, index) => (
           <Case
             key={index}
