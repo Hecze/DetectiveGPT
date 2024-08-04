@@ -12,9 +12,9 @@ const LandingPage: React.FC = () => {
         <div className="mx-auto max-w-2xl py-32 sm:py-48 lg:py-56">
           <div className="text-center">
             <img className='m-auto' src="detectivegpt_white.png" alt="" />
-            <p className="mt-6 text-lg leading-8 text-gray-300">¡Embárcate en una aventura donde cada decisión cuenta! DETECTIVE GPT es una innovadora web app que te pone en la piel de un detective, resolviendo misterios generados por IA. Utilizando la más avanzada tecnología de IA generativa, te ofrecemos una experiencia única llena de intriga, desafíos y emociones.</p>
+            <p className="mt-6 text-lg leading-8 text-gray-300">Prepárate para una aventura inolvidable con DETECTIVE GPT! Ponte en la piel de un detective y sumérgete en misterios llenos de sorpresas. Interroga a los testigos que tienen información clave y sigue las pistas en casos generados por IA. Cada caso es único y cada elección puede cambiarlo todo. ¿Tienes lo necesario para resolver el misterio?</p>
             <div className="mt-10 flex items-center justify-center gap-x-6">
-              <a href="/choose-case" className="rounded-md bg-indigo-600 px-3.5 py-2.5 text-2xl font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">Resuelve el misterio</a>
+              <a href="/choose-case" className="rounded-md bg-indigo-600 px-3.5 py-2.5 text-2xl font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 hover:scale-110">Resuelve el misterio</a>
             </div>
           </div>
         </div>
