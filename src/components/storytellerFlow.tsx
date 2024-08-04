@@ -372,7 +372,7 @@ export default function StorytellerFlow({
       {!gameOver ? (
         <div
           className="xl:w-2/4 w-screen min-h-screen md:bg-contain bg-center bg-no-repeat"
-          style={{ backgroundImage: "url('/fondoPrincipal.webp')" }}
+          style={{ backgroundImage: "url('/fondoPrincipal.png')" }}
         >
           <audio ref={audioRef} loop>
             <source src="soundtrack.mp3" type="audio/mp3" />
