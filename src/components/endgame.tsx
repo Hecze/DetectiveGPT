@@ -29,9 +29,6 @@ export default function Endgame({
         </div>
 
         <div className="flex flex-col gap-2">
-          <Button className="bg-[#413a32] text-[#e9ddcf] py-6 font-semibold opacity-90 break-words whitespace-normal">
-            Descargar reporte (PDF)
-          </Button>
           <Button
             onClick={restartGame}
             className="bg-[#413a32] text-[#e9ddcf] py-6 font-semibold opacity-90 break-words whitespace-normal"

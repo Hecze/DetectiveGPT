@@ -51,7 +51,7 @@ export default function StorytellerFlow({
   const [isLoading, setIsLoading] = useState(false);
   const [assistantResponse, setAssistantResponse] = useState('');
   const [formattedResponse, setFormattedResponse] = useState({
-    paragraph: 'Bienvenido a una historia de misterio generada por IA',
+    paragraph: 'Bienvenido detective, necesitamos de tu ayuda para resolver este caso. ¿Estás listo para comenzar?',
     option1: 'Empezar Historia',
     option2: '',
     option3: '',
